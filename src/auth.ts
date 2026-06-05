@@ -9,13 +9,21 @@ if (!process.env.AUTH_SECRET) {
   process.env.AUTH_SECRET = "default_mock_auth_secret_development_only_1234567890";
 }
 
+const isDbConfigured = !!(
+  process.env.DATABASE_URL &&
+  process.env.DATABASE_URL !== "" &&
+  !process.env.DATABASE_URL.includes("username:password")
+);
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  adapter: isDbConfigured
+    ? DrizzleAdapter(db, {
+        usersTable: users,
+        accountsTable: accounts,
+        sessionsTable: sessions,
+        verificationTokensTable: verificationTokens,
+      })
+    : undefined,
   session: {
     strategy: "jwt",
   },

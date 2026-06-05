@@ -52,7 +52,7 @@ export default function SignInPage() {
         <motion.button
           onClick={handleGoogleSignIn}
           disabled={loading || loadingSandbox}
-          className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-lg font-semibold text-xs font-mono transition-all border cursor-pointer"
+          className="w-full flex items-center justify-center gap-3 py-2.5 px-6 rounded-lg font-semibold text-sm font-heading transition-all border cursor-pointer"
           style={{
             background: loading ? "rgba(0, 217, 255, 0.03)" : "rgba(10, 10, 10, 0.6)",
             borderColor: "rgba(0, 217, 255, 0.15)",
@@ -78,7 +78,7 @@ export default function SignInPage() {
         <motion.button
           onClick={handleSandboxSignIn}
           disabled={loading || loadingSandbox}
-          className="w-full flex items-center justify-center gap-3 py-3 px-6 rounded-lg font-semibold text-xs font-mono transition-all border cursor-pointer mt-3"
+          className="w-full flex items-center justify-center gap-3 py-2.5 px-6 rounded-lg font-semibold text-sm font-heading transition-all border cursor-pointer mt-3"
           style={{
             background: "rgba(0, 255, 136, 0.03)",
             borderColor: "rgba(0, 255, 136, 0.2)",

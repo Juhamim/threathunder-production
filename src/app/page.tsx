@@ -541,7 +541,7 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold mt-2 font-heading tracking-tight">Frequently Asked Questions</h2>
           </motion.div>
 
-          <div className="space-y-3">
+          <div className="flex flex-col gap-3">
             {faqs.map((faq, i) => (
               <motion.div key={i} className="glass-card overflow-hidden"
                 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
@@ -574,7 +574,7 @@ export default function LandingPage() {
               Analyze logs, identify vulnerability patterns, and generate professional incident summaries today.
             </p>
             <button onClick={handleSignIn} disabled={loadingSignIn}
-              className="btn-primary text-sm px-8 py-3.5 flex items-center gap-3 mx-auto">
+              className="btn-primary text-sm px-8 py-3.5 inline-flex items-center gap-3 justify-center w-fit mx-auto">
               <Shield size={16} />
               {loadingSignIn ? "Initializing..." : "Launch Console Free"}
               <ArrowRight size={14} />

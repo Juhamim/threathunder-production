@@ -38,10 +38,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [collapsed, setCollapsed] = useState(false);
 
   const SidebarContent = ({ mobile = false }) => (
-    <div className="flex flex-col h-full justify-between">
-      <div>
+    <div className="flex flex-col h-full">
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Logo / Header */}
-        <div className={`p-4 flex items-center border-b border-gray-900/50 justify-between`}>
+        <div className={`p-4 flex items-center border-b border-gray-900/50 justify-between flex-shrink-0`}>
           <div className="flex items-center gap-2 overflow-hidden">
             <div className="w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center bg-cyan-950/40 border border-cyan-500/20">
               <Shield size={16} className="text-cyan-400" />
@@ -68,7 +68,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Live operational indicator */}
         {(!collapsed || mobile) && (
-          <div className="px-4 py-3 border-b border-gray-900/30">
+          <div className="px-4 py-3 border-b border-gray-900/30 flex-shrink-0">
             <div className="flex items-center gap-2 text-[10px] font-mono text-gray-500">
               <div className="status-dot" />
               <span>SYS_ACTIVE</span>
@@ -77,18 +77,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* Navigation Items */}
-        <nav className="px-2 py-3 space-y-1">
+        <nav className="px-2 py-3 flex flex-col gap-1 overflow-y-auto flex-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-xs font-mono font-medium relative group ${
-                  isActive 
-                    ? "bg-cyan-500/5 text-cyan-400 border-l-2 border-cyan-400" 
-                    : "text-gray-400 hover:bg-white/2 hover:text-white border-l-2 border-transparent"
-                }`}
+                className={`sidebar-item relative group font-mono text-xs ${isActive ? "active" : ""}`}
                 onClick={() => mobile && setSidebarOpen(false)}
               >
                 <item.icon size={16} className="flex-shrink-0" />
@@ -107,7 +103,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Footer Profile & Signout */}
-      <div className="p-3 border-t border-gray-900/50">
+      <div className="p-3 border-t border-gray-900/50 flex-shrink-0">
         {session?.user && (!collapsed || mobile) && (
           <div className="flex items-center gap-2.5 mb-3 p-1 rounded bg-black/20">
             {session.user.image ? (

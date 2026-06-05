@@ -1,9 +1,16 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DetectedThreat } from "@/lib/threat-detection";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+const isGeminiConfigured = !!(
+  process.env.GEMINI_API_KEY &&
+  process.env.GEMINI_API_KEY !== "your-gemini-api-key" &&
+  process.env.GEMINI_API_KEY.trim() !== ""
+);
+
+const genAI = isGeminiConfigured ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY!) : null;
 
 function getModel(streaming = false) {
+  if (!genAI) return null;
   return genAI.getGenerativeModel({
     model: "gemini-2.5-flash-preview-05-20",
     generationConfig: {
@@ -16,9 +23,11 @@ function getModel(streaming = false) {
 
 // ─── Threat Analysis ──────────────────────────────────────────────────────
 export async function analyzeThreat(threat: DetectedThreat): Promise<string> {
-  const model = getModel();
+  try {
+    const model = getModel();
+    if (!model) throw new Error("Gemini not configured");
 
-  const prompt = `You are an expert SOC analyst. Analyze this security threat and provide a clear, professional explanation.
+    const prompt = `You are an expert SOC analyst. Analyze this security threat and provide a clear, professional explanation.
 
 THREAT DETAILS:
 - Type: ${threat.type.replace(/_/g, " ").toUpperCase()}
@@ -42,11 +51,30 @@ Provide your analysis in this EXACT JSON format (no markdown, just JSON):
   "technicalDetails": "Technical details for senior analysts"
 }`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
-  // Clean up markdown code fences if present
-  return text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    // Clean up markdown code fences if present
+    return text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  } catch (error) {
+    console.warn("Gemini analyzeThreat failed, using fallback:", error);
+    return JSON.stringify({
+      attackType: threat.title,
+      whatHappened: `Heuristics flagged potential ${threat.type.replace(/_/g, " ")} vector from ${threat.affectedIps.join(", ")}.`,
+      impact: "Potential compromise or service degradation depending on exposed system vulnerabilities.",
+      likelihood: threat.severity.toUpperCase(),
+      immediateActions: [
+        "Block identified IP sources via firewall/security groups.",
+        "Verify application configuration for standard defense layers.",
+        "Provide a valid GEMINI_API_KEY in .env.local for full intelligence correlation."
+      ],
+      longTermRemediation: [
+        "Establish rate limit thresholds.",
+        "Implement continuous intrusion detection systems (IDS)."
+      ],
+      technicalDetails: `Local engine detected ${threat.occurrences} suspicious requests. Sample matching log: ${threat.evidence[0] || "None"}`
+    });
+  }
 }
 
 // ─── Full AI Report Generation ────────────────────────────────────────────
@@ -64,13 +92,15 @@ export async function generateIncidentReport(
   iocs: string[];
   timeline: { time: string; event: string }[];
 }> {
-  const model = getModel();
-
   const threatSummary = threats.map(t =>
     `- ${t.severity.toUpperCase()} | ${t.title} | ${t.occurrences} occurrences | IPs: ${t.affectedIps.slice(0, 3).join(", ")}`
   ).join("\n");
 
-  const prompt = `You are a senior cybersecurity analyst. Generate a professional incident response report.
+  try {
+    const model = getModel();
+    if (!model) throw new Error("Gemini not configured");
+
+    const prompt = `You are a senior cybersecurity analyst. Generate a professional incident response report.
 
 INCIDENT CONTEXT:
 - Log File: ${filename}
@@ -104,20 +134,27 @@ Generate a professional security incident report in this EXACT JSON format:
   ]
 }`;
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text().replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
 
-  try {
     return JSON.parse(text);
-  } catch {
+  } catch (error) {
+    console.warn("Gemini generateIncidentReport failed, using fallback:", error);
     return {
-      executiveSummary: "Security analysis completed. Multiple threats detected in the uploaded log file.",
-      threatOverview: threatSummary,
-      riskAssessment: `Risk score: ${riskScore}/100`,
-      recommendedActions: ["Review all flagged IPs", "Update firewall rules", "Enable intrusion detection"],
-      conclusion: "Immediate action required to remediate identified threats.",
-      iocs: threats.flatMap(t => t.affectedIps).slice(0, 10),
-      timeline: [{ time: "T+0", event: "Threats detected in logs" }],
+      executiveSummary: `Log analysis completed for file '${filename}' under Sandbox/offline mode. Basic threat rules detected ${threats.length} potential attack sequences. To generate deep AI incident writeups, configure a valid GEMINI_API_KEY.`,
+      threatOverview: `Rule heuristics matching identified typical attack signatures across ${threats.length} instances. Primary triggers: ${threats.map(t => t.title).slice(0, 3).join(", ")}.`,
+      riskAssessment: `Risk level assessed at ${riskScore}/100. Action is recommended to secure assets from IP sources: ${threats.flatMap(t => t.affectedIps).slice(0, 5).join(", ")}.`,
+      recommendedActions: [
+        "Isolate/nullroute top requesting IP addresses in security policies.",
+        "Enable valid Google Gemini API key to activate automated incident summaries.",
+        "Review server configuration against standard vulnerability configurations."
+      ],
+      conclusion: "Preliminary heuristics scan completed. Live AI report requires a valid Gemini API key in configuration settings.",
+      iocs: Array.from(new Set(threats.flatMap(t => t.affectedIps))).slice(0, 10),
+      timeline: threats.map((t, idx) => ({
+        time: `T+${idx * 4}m`,
+        event: `Alert: ${t.title} triggered by source IP(s).`
+      })).slice(0, 5)
     };
   }
 }
@@ -140,18 +177,24 @@ export async function chatWithAssistant(
   userMessage: string,
   history: { role: "user" | "model"; parts: { text: string }[] }[]
 ): Promise<string> {
-  const model = getModel();
+  try {
+    const model = getModel();
+    if (!model) throw new Error("Gemini not configured");
 
-  const chat = model.startChat({
-    history: [
-      { role: "user", parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
-      { role: "model", parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis, threat investigation, and security guidance." }] },
-      ...history,
-    ],
-  });
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
+        { role: "model", parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis, threat investigation, and security guidance." }] },
+        ...history,
+      ],
+    });
 
-  const result = await chat.sendMessage(userMessage);
-  return result.response.text();
+    const result = await chat.sendMessage(userMessage);
+    return result.response.text();
+  } catch (error) {
+    console.warn("Gemini chatWithAssistant failed, using fallback:", error);
+    return "Gemini API key is unconfigured or invalid. Please save a valid GEMINI_API_KEY in .env.local to activate the interactive chat assistant.";
+  }
 }
 
 // ─── Streaming Chat ───────────────────────────────────────────────────────
@@ -159,20 +202,33 @@ export async function* streamChatWithAssistant(
   userMessage: string,
   history: { role: "user" | "model"; parts: { text: string }[] }[]
 ): AsyncGenerator<string> {
-  const model = getModel(true);
+  try {
+    const model = getModel(true);
+    if (!model) throw new Error("Gemini not configured");
 
-  const chat = model.startChat({
-    history: [
-      { role: "user", parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
-      { role: "model", parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis." }] },
-      ...history,
-    ],
-  });
+    const chat = model.startChat({
+      history: [
+        { role: "user", parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
+        { role: "model", parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis." }] },
+        ...history,
+      ],
+    });
 
-  const result = await chat.sendMessageStream(userMessage);
+    const result = await chat.sendMessageStream(userMessage);
 
-  for await (const chunk of result.stream) {
-    const text = chunk.text();
-    if (text) yield text;
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      if (text) yield text;
+    }
+  } catch (error) {
+    console.warn("Gemini streamChatWithAssistant failed, using fallback:", error);
+    yield "Hello! I am the **ThreatHunter AI Assistant**. \n\n" +
+          "It looks like your **Gemini API Key** is not configured, or is using the default placeholder value. \n\n" +
+          "### How to Enable Live AI Analysis & Chat:\n" +
+          "1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey) to generate a free Gemini API Key.\n" +
+          "2. Open `threathunter-ai/.env.local` or `.env.example` in your editor.\n" +
+          "3. Change the line `GEMINI_API_KEY=your-gemini-api-key` to your actual API key.\n" +
+          "4. **Save** the file to disk. The server will hot-reload and activate the AI features immediately!\n\n" +
+          "*(In the meantime, the dashboard log heuristics and local sandbox authentication remain fully functional!)*";
   }
 }
