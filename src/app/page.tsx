@@ -234,11 +234,11 @@ export default function RedesignedLandingPage() {
             // Free & Open Source · No Sign-Up Required
           </div>
 
-          <h1 className="text-white tracking-tight leading-[0.95] font-extrabold" style={{ fontSize: "clamp(48px, 6.5vw, 84px)", fontFamily: "'Syne', sans-serif" }}>
+          <h1 className="text-white tracking-tight leading-[1.1] font-extrabold" style={{ fontSize: "48px", fontFamily: "'Syne', sans-serif" }}>
             Hunt Threats <br className="hidden md:inline" />Before They Hunt You.
           </h1>
 
-          <p className="text-[#94A3B8] leading-[1.8] text-[18px] md:text-[20px] font-normal max-w-[540px] mx-auto lg:mx-0">
+          <p className="text-[#94A3B8] leading-[1.6] text-[16px] font-normal max-w-[540px] mx-auto lg:mx-0">
             Detect attacks, leaked secrets, credential abuse, suspicious activity, and security anomalies in seconds using AI-powered threat hunting.
           </p>
 
@@ -304,52 +304,52 @@ export default function RedesignedLandingPage() {
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
               // THREAT DETECTION CAPABILITIES
             </span>
-            <h2 className="mt-3 text-white font-extrabold text-3xl md:text-5xl" style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "-0.03em" }}>
+            <h2 className="mt-3 text-white font-extrabold" style={{ fontSize: "32px", fontFamily: "'Syne', sans-serif", letterSpacing: "-0.02em" }}>
               What ThreatHunter Does
             </h2>
           </div>
 
           <div className="features-grid">
             {/* Card 1: AI Log Analysis */}
-            <div className="glass-card feature-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-card feature-card bg-[#111827]/50 flex flex-col justify-between min-h-[340px]">
               <div>
                 <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
                   <FileText size={22} className="text-[#00E5A8]" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+                <h3 className="font-bold mb-3 text-white" style={{ fontSize: "20px", fontFamily: "'Syne', sans-serif" }}>
                   AI Log Analysis
                 </h3>
-                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                <p className="text-[16px] text-[#94A3B8] leading-relaxed">
                   Upload logs and instantly correlate threat signatures. The parser auto-detects fields to scan for SQL Injection, Cross-Site Scripting (XSS), Brute Force, authentication anomalies, and pattern logs, delivering briefs in seconds.
                 </p>
               </div>
             </div>
 
             {/* Card 2: GitHub Secret Scanner */}
-            <div className="glass-card feature-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-card feature-card bg-[#111827]/50 flex flex-col justify-between min-h-[340px]">
               <div>
                 <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
                   <Key size={22} className="text-[#00E5A8]" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+                <h3 className="font-bold mb-3 text-white" style={{ fontSize: "20px", fontFamily: "'Syne', sans-serif" }}>
                   GitHub Secret Scanner
                 </h3>
-                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                <p className="text-[16px] text-[#94A3B8] leading-relaxed">
                   Scan any public or private GitHub repository for exposed API keys, active tokens, credentials, hardcoded passwords, and security misconfigurations across all commit trees and files.
                 </p>
               </div>
             </div>
 
             {/* Card 3: Live Threat Dashboard */}
-            <div className="glass-card feature-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-card feature-card bg-[#111827]/50 flex flex-col justify-between min-h-[340px]">
               <div>
                 <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
                   <Shield size={22} className="text-[#00E5A8]" />
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+                <h3 className="font-bold mb-3 text-white" style={{ fontSize: "20px", fontFamily: "'Syne', sans-serif" }}>
                   Live Threat Dashboard
                 </h3>
-                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                <p className="text-[16px] text-[#94A3B8] leading-relaxed">
                   Monitor active incidents in real time. Features a tactical attack paths radar, severity categorization (Critical, High, Medium, Low), incident volume trends, and SOC investigation workflows.
                 </p>
               </div>
@@ -365,7 +365,7 @@ export default function RedesignedLandingPage() {
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
               // ARCHITECTURAL PIPELINE
             </span>
-            <h2 className="mt-3 text-white font-extrabold text-3xl md:text-5xl" style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "-0.03em" }}>
+            <h2 className="mt-3 text-white font-extrabold" style={{ fontSize: "32px", fontFamily: "'Syne', sans-serif", letterSpacing: "-0.02em" }}>
               How It Works
             </h2>
           </div>
@@ -410,10 +410,10 @@ export default function RedesignedLandingPage() {
                     {node.step}
                   </div>
                   <node.icon size={24} className="text-[#94A3B8] mb-4" />
-                  <h3 className="text-base font-bold text-white mb-2" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  <h3 className="font-bold text-white mb-2" style={{ fontSize: "20px", fontFamily: "'Syne', sans-serif" }}>
                     {node.title}
                   </h3>
-                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                  <p className="text-[14px] text-[#94A3B8] leading-relaxed">
                     {node.desc}
                   </p>
                 </div>
@@ -431,7 +431,7 @@ export default function RedesignedLandingPage() {
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
               // TRANSPARENT SECURITY
             </span>
-            <h2 className="text-white tracking-tight leading-none text-3xl md:text-5xl font-extrabold" style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "-0.03em" }}>
+            <h2 className="text-white tracking-tight leading-none font-extrabold" style={{ fontSize: "32px", fontFamily: "'Syne', sans-serif", letterSpacing: "-0.02em" }}>
               100% Open Source. <br />Fully Transparent.
             </h2>
             <p className="text-[#94A3B8] text-sm md:text-base leading-relaxed max-w-[580px] mx-auto lg:mx-0">
@@ -456,7 +456,7 @@ export default function RedesignedLandingPage() {
 
           {/* Right Repositories Actions widget */}
           <div className="w-full">
-            <div className="bg-[#111827]/60 backdrop-blur-xl border border-white/8 p-6 rounded-[6px] space-y-5 w-full repo-card text-left shadow-2xl">
+            <div className="glass-card bg-[#111827]/60 backdrop-blur-xl space-y-5 w-full repo-card text-left shadow-2xl">
               <div className="flex items-center justify-between font-mono text-[10px] text-[#64748B]">
                 <span>MIT CODEBASE</span>
                 <span className="text-[#00E5A8] font-bold">Juhamim/threathunder-production</span>
@@ -500,7 +500,7 @@ export default function RedesignedLandingPage() {
       {/* ── Final CTA Section ─────────────────────────────────────────── */}
       <section className="py-32 border-t border-white/5 text-center relative overflow-hidden bg-[#070B14]">
         <div className="max-w-[720px] mx-auto px-6 relative z-10">
-          <h2 className="text-white font-extrabold tracking-tight font-heading leading-none" style={{ fontSize: "clamp(32px, 5vw, 52px)", fontFamily: "'Syne', sans-serif" }}>
+          <h2 className="text-white font-extrabold tracking-tight font-heading leading-none" style={{ fontSize: "32px", fontFamily: "'Syne', sans-serif" }}>
             Start hunting threats now.
           </h2>
           <p className="text-[#94A3B8] mt-3 font-mono text-xs uppercase tracking-wider">
