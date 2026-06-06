@@ -77,11 +77,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden text-[var(--text-secondary)] bg-[#0A0C0F] relative">
+    <div className="w-screen h-screen overflow-hidden text-[var(--text-secondary)] bg-[#0A0C0F] relative" style={{ fontFamily: '"DM Sans", sans-serif' }}>
       {/* ── Desktop & Tablet Sidebar (md+) ── */}
       <aside
         className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 bg-[#0D1117] border-r border-[#1E2229] z-30 transition-all duration-300 ease-in-out"
-        style={{ width: collapsed ? "72px" : "260px" }}
+        style={{ width: collapsed ? "72px" : "260px", willChange: "width" }}
       >
         {/* Header / Logo section */}
         <div className="h-[56px] flex items-center justify-between px-4 border-b border-[#1E2229] overflow-hidden">
@@ -314,20 +314,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Page view content container */}
         <main
-          className="flex-1 overflow-y-auto relative flex flex-col p-6 gap-3"
+          className="flex-1 overflow-y-auto relative"
           style={{
             height: "calc(100vh - 56px)",
-            paddingBottom: "calc(24px + var(--content-bottom-pad))",
+            paddingBottom: "var(--content-bottom-pad)",
           }}
         >
-          <div className="absolute inset-0 pointer-events-none radial-glow opacity-30" />
-          <div className="relative z-10 flex-1 flex flex-col min-h-0">
+          <div className="absolute inset-0 pointer-events-none radial-glow opacity-20" />
+          <div className="relative z-10 h-full flex flex-col p-6 gap-4 min-h-0">
             {children}
           </div>
         </main>
       </div>
 
-      {/* Breakpoint custom sidebar variables */}
+      {/* Dynamic sidebar CSS variables */}
       <style jsx global>{`
         :root {
           --sidebar-width: ${collapsed ? "72px" : "260px"};
@@ -337,9 +337,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         @media (max-width: 767px) {
           :root {
             --sidebar-width: 0px;
-            --header-height: 56px;
-            --content-bottom-pad: 56px;
+            --content-bottom-pad: 64px;
           }
+        }
+        .workspace-container {
+          padding: 0;
+          gap: 0;
         }
       `}</style>
     </div>

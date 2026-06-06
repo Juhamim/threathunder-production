@@ -89,18 +89,18 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="workspace-container space-y-4">
-        <div className="h-[60px] flex items-center justify-between border-b border-[#1E2229] pb-3 mb-2">
-          <div className="skeleton h-6 w-32" />
+      <div className="workspace-container">
+        <div className="page-header">
+          <div className="skeleton h-5 w-32 rounded-lg" />
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-[140px] skeleton rounded-2xl" />
+            <div key={i} className="h-[130px] skeleton" />
           ))}
         </div>
         <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
-          <div className="h-72 skeleton rounded-2xl" />
-          <div className="h-72 skeleton rounded-2xl" />
+          <div className="h-72 skeleton" />
+          <div className="h-72 skeleton" />
         </div>
       </div>
     );
@@ -119,10 +119,10 @@ export default function DashboardPage() {
   return (
     <div className="workspace-container">
       {/* ── Page Header ── */}
-      <div className="flex-shrink-0 flex items-center justify-between h-[60px] border-b border-[#1E2229] pb-3 mb-2">
+      <div className="page-header">
         <div>
-          <h1 className="text-xl font-bold font-heading text-white tracking-tight">Dashboard</h1>
-          <p className="text-xs text-[var(--text-muted)] font-medium">Real-Time Threat Monitoring</p>
+          <h1 className="text-[18px] font-bold font-heading text-white tracking-tight leading-tight">Dashboard</h1>
+          <p className="text-[12px] text-[var(--text-muted)] font-medium mt-0.5">Real-Time Threat Monitoring</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 bg-[var(--accent-mint)] rounded-full animate-pulse" />
@@ -131,47 +131,39 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Metric Cards Row ── */}
-      <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "LOGS SCANNED", value: stats.totalLogsScanned.toLocaleString(), trend: "+2.4%", desc: "vs last 24h", color: "var(--accent-mint)", spark: [30, 45, 35, 60, 50, 75, 90] },
-          { label: "THREATS FLAGGED", value: stats.totalThreats, trend: "SYSTEM MATCH", desc: "active signatures", color: "var(--color-warning)", spark: [10, 25, 15, 35, 20, 45, 30] },
-          { label: "CRITICAL ALERTS", value: stats.criticalAlerts, trend: "ACTION REQUIRED", desc: "immediate attention", color: "var(--color-danger)", spark: [5, 12, 8, 15, 10, 18, 15] },
-          { label: "RISK LEVEL", value: `${stats.riskScore}/100`, trend: riskLabel.toUpperCase(), desc: "current status", color: riskColor, spark: [80, 70, 65, 60, 55, 50, 45] },
+          { label: "LOGS SCANNED",   value: stats.totalLogsScanned.toLocaleString(), trend: "+2.4%",         desc: "vs last 24h",      color: "var(--accent-mint)",  spark: [30,45,35,60,50,75,90] },
+          { label: "THREATS FLAGGED", value: stats.totalThreats,                     trend: "SYSTEM MATCH",  desc: "active signatures", color: "var(--color-warning)",spark: [10,25,15,35,20,45,30] },
+          { label: "CRITICAL ALERTS", value: stats.criticalAlerts,                   trend: "ACTION REQD",   desc: "needs attention",   color: "var(--color-danger)", spark: [5,12,8,15,10,18,15]  },
+          { label: "RISK LEVEL",      value: `${stats.riskScore}/100`,               trend: riskLabel.toUpperCase(), desc: "current status", color: riskColor,             spark: [80,70,65,60,55,50,45] },
         ].map((card, i) => (
           <motion.div
             key={card.label}
             {...fadeUp(i * 0.03)}
             className="glass-card flex flex-col justify-between"
-            style={{ height: "140px" }}
+            style={{ minHeight: "120px" }}
           >
             <div className="flex items-start justify-between">
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-wider text-[#6B7280]">
-                  {card.label}
-                </p>
-                <h3 className="font-bold tracking-tight font-heading mt-1.5 text-white text-[24px]">
+              <div className="min-w-0 flex-1">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-[#6B7280] leading-none">{card.label}</p>
+                <h3 className="font-bold tracking-tight font-heading mt-2 text-white" style={{ fontSize: "22px" }}>
                   {card.value}
                 </h3>
               </div>
-              {/* Sparkline mini chart visual using simple svg */}
-              <div className="w-16 h-8 opacity-60">
+              {/* Sparkline */}
+              <div className="w-14 h-7 opacity-60 flex-shrink-0 ml-2">
                 <svg viewBox="0 0 70 30" className="w-full h-full">
                   <path
-                    d={`M ${card.spark.map((val, idx) => `${idx * 10},${30 - (val * 30 / 100)}`).join(" L ")}`}
-                    fill="none"
-                    stroke={card.color}
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    d={`M ${card.spark.map((val, idx) => `${idx * 10},${30 - val * 30 / 100}`).join(" L ")}`}
+                    fill="none" stroke={card.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                   />
                 </svg>
               </div>
             </div>
-            <div className="flex items-center justify-between text-[11px] border-t border-white/5 pt-2">
-              <span className="text-[#6b7280]">{card.desc}</span>
-              <span className="font-mono font-bold" style={{ color: card.color }}>
-                {card.trend}
-              </span>
+            <div className="flex items-center justify-between text-[10px] border-t border-white/5 pt-2 mt-2">
+              <span className="text-[#6b7280] truncate">{card.desc}</span>
+              <span className="font-mono font-bold flex-shrink-0 ml-2" style={{ color: card.color }}>{card.trend}</span>
             </div>
           </motion.div>
         ))}
@@ -190,14 +182,15 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Table Column headers */}
-          <div className="h-[36px] flex-shrink-0 px-5 flex items-center bg-[#0D1117] border-b border-[#1E2229]">
-            <div className="grid grid-cols-[32px_1fr_120px_120px_64px_80px_80px] w-full gap-2 items-center font-mono text-[11px] text-[#3D4452] uppercase tracking-[0.08em] font-bold">
+          {/* Table Column headers — responsive grid (hidden columns on narrow) */}
+          <div className="h-[36px] flex-shrink-0 px-4 flex items-center bg-[#0D1117] border-b border-[#1E2229]">
+            <div className="grid w-full gap-3 items-center font-mono text-[10px] text-[#3D4452] uppercase tracking-[0.08em] font-bold"
+              style={{ gridTemplateColumns: "28px 1fr 110px 110px 56px 72px 72px" }}>
               <span>Sev</span>
               <span>Threat Type</span>
-              <span>Source IP</span>
-              <span>File Asset</span>
-              <span>Time</span>
+              <span className="hidden sm:block">Source IP</span>
+              <span className="hidden md:block">File Asset</span>
+              <span className="hidden sm:block">Time</span>
               <span>Status</span>
               <span className="text-right">Actions</span>
             </div>
@@ -222,43 +215,38 @@ export default function DashboardPage() {
                       backgroundColor: idx % 2 === 1 ? "rgba(255,255,255,0.01)" : "transparent",
                     }}
                   >
-                    <div className="grid grid-cols-[32px_1fr_120px_120px_64px_80px_80px] w-full gap-2 items-center">
+                    <div
+                      className="grid w-full gap-3 items-center"
+                      style={{ gridTemplateColumns: "28px 1fr 110px 110px 56px 72px 72px" }}
+                    >
                       {/* Severity dot */}
                       <div className="flex items-center">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor }} />
                       </div>
                       {/* Threat Type */}
                       <div className="font-heading font-semibold text-[13px] text-[#F0EDE6] truncate">{threat.type}</div>
                       {/* Source IP */}
-                      <div className="font-mono text-[12px] text-[#C8C4BC] truncate">{threat.ip}</div>
+                      <div className="font-mono text-[11px] text-[#C8C4BC] truncate hidden sm:block">{threat.ip}</div>
                       {/* File Asset */}
-                      <div className="font-mono text-[12px] text-[#6B7280] truncate">{threat.file}</div>
+                      <div className="font-mono text-[11px] text-[#6B7280] truncate hidden md:block">{threat.file}</div>
                       {/* Timestamp */}
-                      <div className="font-mono text-[11px] text-[#6B7280]">{threat.time}</div>
+                      <div className="font-mono text-[10px] text-[#6B7280] hidden sm:block">{threat.time}</div>
                       {/* Status badge */}
                       <div>
                         <span
-                          className="border-l-[2px] pl-2 text-[10px] font-mono font-bold"
+                          className="border-l-[2px] pl-2 text-[10px] font-mono font-bold truncate"
                           style={{ borderColor: dotColor, color: dotColor }}
                         >
                           {threat.status || "OPEN"}
                         </span>
                       </div>
-                      {/* Action buttons (revealed on hover) */}
-                      <div className="text-right flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleDismissThreat(threat.id)}
-                          className="p-1 hover:text-[var(--color-danger)] transition-colors"
-                          title="Dismiss alert"
-                        >
-                          <X size={14} />
+                      {/* Action buttons */}
+                      <div className="text-right flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => handleDismissThreat(threat.id)} className="p-1 hover:text-[var(--color-danger)] transition-colors" title="Dismiss">
+                          <X size={13} />
                         </button>
-                        <Link
-                          href="/threats"
-                          className="p-1 hover:text-[var(--accent-mint)] transition-colors"
-                          title="Investigate target"
-                        >
-                          <ArrowRight size={14} />
+                        <Link href="/threats" className="p-1 hover:text-[var(--accent-mint)] transition-colors" title="Investigate">
+                          <ArrowRight size={13} />
                         </Link>
                       </div>
                     </div>
