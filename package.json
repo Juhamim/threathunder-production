@@ -10,7 +10,7 @@
   "bugs": {
     "url": "https://github.com/Juhamim/threathunder-production/issues"
   },
-  "homepage": "https://github.com/Juhamim/threathunder-production#readme",
+  "homepage": "https://threathunder-production.vercel.app",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

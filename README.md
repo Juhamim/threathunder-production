@@ -2,6 +2,8 @@
 
 > **AI-Powered Security Operations Center** — Detect threats, analyze logs, and generate professional incident reports with Gemini 2.5 Flash.
 
+🌐 **Live Production:** [threathunder-production.vercel.app](https://threathunder-production.vercel.app/)
+
 ![ThreatHunter AI Banner](https://img.shields.io/badge/ThreatHunter-AI-blue?style=for-the-badge&logo=shield&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge&logo=typescript)
