@@ -143,7 +143,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl mx-auto" style={{ height: "calc(100vh - 140px)" }}>
+    <div className="flex flex-col h-full w-full max-w-[1500px] mx-auto" style={{ height: "calc(100vh - 140px)" }}>
       {/* Header */}
       <motion.div className="glass-card p-4 mb-4 flex items-center justify-between"
         initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>

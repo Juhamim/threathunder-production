@@ -1,607 +1,589 @@
 "use client";
 
-import { signIn } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Shield,
-  Eye,
-  FileSearch,
-  Terminal,
-  Globe,
-  Lock,
-  ChevronRight,
-  CheckCircle,
-  AlertTriangle,
-  Zap,
-  BarChart2,
-  MessageSquare,
-  GitBranch,
-  Star,
-  ArrowRight,
-  Activity,
-  Server,
-  Code,
   Key,
+  FileText,
+  Check,
+  Activity,
+  Terminal,
+  ArrowRight,
+  Cpu,
+  Code,
+  ExternalLink,
 } from "lucide-react";
 
-// ─── Floating simulated threat intelligence telemetry ─────────────────────
-const simulatedAlerts = [
-  { id: 1, ip: "185.220.101.44", type: "SQLi Injection", file: "nginx_access.log", time: "Just now", severity: "critical" },
-  { id: 2, ip: "203.0.113.57", type: "SSH Brute Force", file: "auth.log", time: "5s ago", severity: "critical" },
-  { id: 3, ip: "github:repository", type: "Exposed AWS Secret", file: "aws_client.go", time: "18s ago", severity: "high" },
-  { id: 4, ip: "192.168.1.104", type: "Directory Traversal", file: "apache_error.log", time: "42s ago", severity: "medium" },
+// Simulated logging ticker lines inside custom security panel visual
+const simulatedCorrelatorLines = [
+  { text: "sys.telemetry_ingest: listening on socket :8080...", type: "system" },
+  { text: "parser.nginx: mapping combined log format variables...", type: "system" },
+  { text: "event.correlation: established database engine session...", type: "db" },
+  { text: "engine.signature: loaded 7 threat patterns successfully", type: "system" },
+  { text: "CRITICAL: SQLi attempt detected from IP 185.220.101.44 (nginx_access.log)", type: "danger" },
+  { text: "   --> evidence payload: GET /index.php?id=1%27%20UNION%20SELECT...", type: "evidence" },
+  { text: "WARNING: SSH brute force alert from IP 203.0.113.57 (auth.log)", type: "warning" },
+  { text: "   --> occurrences: 42 authentication failures in 5s", type: "evidence" },
+  { text: "engine.scanner: checking repository github.com/Juhamim/threathunder-production...", type: "system" },
+  { text: "CRITICAL: Exposed API key found in config/jwt.json (commit cd4590f)", type: "danger" },
+  { text: "   --> pattern: AWS ACCESS KEY (AKIAIOSFODNN7EXAMPLE)", type: "evidence" },
+  { text: "telemetry.status: 2 incidents flagged. Console ready.", type: "db" },
 ];
 
-function InteractiveGlobe() {
-  const [activeAlertIndex, setActiveAlertIndex] = useState(0);
+function PremiumSecurityVisual() {
+  const [tickerLines, setTickerLines] = useState<typeof simulatedCorrelatorLines>([]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveAlertIndex((prev) => (prev + 1) % simulatedAlerts.length);
-    }, 4000);
-    return () => clearInterval(timer);
+    let index = 0;
+    const interval = setInterval(() => {
+      setTickerLines((prev) => {
+        if (index >= simulatedCorrelatorLines.length) {
+          index = 0;
+          return [];
+        }
+        const next = [...prev, simulatedCorrelatorLines[index]];
+        index++;
+        return next;
+      });
+    }, 1400);
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="relative w-full h-[380px] lg:h-[450px] flex items-center justify-center overflow-hidden rounded-2xl glass-card border border-cyan-500/10">
-      {/* Dynamic Animated Grid Overlay */}
-      <div className="absolute inset-0 cyber-grid opacity-30 pointer-events-none" />
-
-      {/* Rotating 3D Vector Globe SVG */}
-      <div className="relative w-[280px] h-[280px] md:w-[320px] md:h-[320px] flex items-center justify-center">
-        {/* Radar concentric scanning circles */}
-        <motion.div
-          className="absolute inset-0 rounded-full border border-cyan-500/10 pointer-events-none"
-          animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.05, 0.3] }}
-          transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-        />
-        <motion.div
-          className="absolute w-[80%] h-[80%] rounded-full border border-emerald-500/10 pointer-events-none"
-          animate={{ scale: [1, 1.3, 1], opacity: [0.1, 0.4, 0.1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "linear", delay: 2 }}
-        />
-
-        {/* Tactical Crosshair */}
-        <div className="absolute w-8 h-[1px] bg-cyan-500/30" />
-        <div className="absolute h-8 w-[1px] bg-cyan-500/30" />
-
-        {/* Vector Globe SVG */}
-        <svg viewBox="0 0 100 100" className="w-full h-full relative z-10 select-none">
-          {/* Outer Rotating Latitude/Longitude Rings */}
-          <motion.g
-            animate={{ rotate: 360 }}
-            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          >
-            {/* Outline */}
-            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(0, 217, 255, 0.15)" strokeWidth="0.5" />
-            {/* Latitudes */}
-            <ellipse cx="50" cy="50" rx="45" ry="12" fill="none" stroke="rgba(0, 217, 255, 0.08)" strokeWidth="0.4" />
-            <ellipse cx="50" cy="50" rx="45" ry="25" fill="none" stroke="rgba(0, 217, 255, 0.08)" strokeWidth="0.4" />
-            <ellipse cx="50" cy="50" rx="45" ry="38" fill="none" stroke="rgba(0, 217, 255, 0.08)" strokeWidth="0.4" />
-            {/* Longitudes */}
-            <ellipse cx="50" cy="50" rx="12" ry="45" fill="none" stroke="rgba(0, 217, 255, 0.08)" strokeWidth="0.4" />
-            <ellipse cx="50" cy="50" rx="25" ry="45" fill="none" stroke="rgba(0, 217, 255, 0.08)" strokeWidth="0.4" />
-            <ellipse cx="50" cy="50" rx="38" ry="45" fill="none" stroke="rgba(0, 217, 255, 0.08)" strokeWidth="0.4" />
-          </motion.g>
-
-          {/* Pulse Attack Path Arcs */}
-          <motion.path
-            d="M 20,30 Q 50,10 80,45"
-            fill="none"
-            stroke="rgba(255, 59, 92, 0.6)"
-            strokeWidth="0.7"
-            strokeDasharray="2 3"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: [0, 1, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.path
-            d="M 75,70 Q 40,85 15,40"
-            fill="none"
-            stroke="rgba(0, 255, 136, 0.6)"
-            strokeWidth="0.7"
-            strokeDasharray="3 3"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: [0, 1, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          />
-
-          {/* Pulsing Nodes */}
-          {/* North America */}
-          <circle cx="20" cy="30" r="1.5" fill="#ff3b5c" />
-          <motion.circle cx="20" cy="30" r="4" fill="none" stroke="#ff3b5c" strokeWidth="0.5"
-            animate={{ scale: [1, 2.5, 1], opacity: [0.8, 0, 0.8] }} transition={{ duration: 2, repeat: Infinity }} />
-
-          {/* Europe */}
-          <circle cx="50" cy="25" r="1.2" fill="#00d9ff" />
-
-          {/* East Asia */}
-          <circle cx="80" cy="45" r="1.5" fill="#00ff88" />
-          <motion.circle cx="80" cy="45" r="4" fill="none" stroke="#00ff88" strokeWidth="0.5"
-            animate={{ scale: [1, 2.5, 1], opacity: [0.8, 0, 0.8] }} transition={{ duration: 2.5, repeat: Infinity }} />
-
-          {/* South America */}
-          <circle cx="35" cy="70" r="1.2" fill="#ffb800" />
-        </svg>
+    <div className="relative w-full h-[540px] max-w-[620px] bg-[#111827]/60 backdrop-blur-xl border border-white/8 rounded-[6px] overflow-hidden flex flex-col p-5 font-mono select-none shadow-2xl z-10 mx-auto">
+      {/* Visual Header */}
+      <div className="flex items-center justify-between border-b border-white/8 pb-3 mb-4">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-[#00E5A8] rounded-full animate-pulse" />
+          <span className="text-[10px] font-bold text-white tracking-wider">SEC_NODE // CORE_THREAT_CORRELATOR</span>
+        </div>
+        <span className="text-[9px] text-[#64748B]">STATUS: MONITORED</span>
       </div>
 
-      {/* Floating Tactical Telemetry Card Overlay */}
-      <div className="absolute bottom-6 left-6 right-6 z-20">
-        <AnimatePresence mode="wait">
-          {simulatedAlerts.map((alert, idx) => {
-            if (idx !== activeAlertIndex) return null;
-            return (
-              <motion.div
-                key={alert.id}
-                initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -15, scale: 0.95 }}
-                transition={{ duration: 0.4 }}
-                className="glass-card p-4 flex items-center justify-between border border-cyan-500/20 shadow-lg shadow-black/80"
-                style={{ background: "rgba(10, 10, 10, 0.85)" }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${alert.severity === "critical" ? "bg-red-500 animate-pulse" : "bg-orange-500"}`} />
-                  <div>
-                    <div className="text-xs font-mono font-bold text-white">{alert.type}</div>
-                    <div className="text-[10px] font-mono text-gray-400 mt-0.5">Source: {alert.ip}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] font-mono text-cyan-400">{alert.file}</div>
-                  <div className="text-[9px] font-mono text-gray-500 mt-0.5">{alert.time}</div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </AnimatePresence>
+      {/* Grid Layout inside the widget */}
+      <div className="flex-grow grid grid-cols-12 gap-3 min-h-0">
+        {/* Left Column: Metrics & Analytics Panel */}
+        <div className="col-span-4 flex flex-col gap-3 h-full">
+          {/* Risk Level gauge */}
+          <div className="bg-[#070B14]/85 border border-white/8 p-3 rounded-[4px] flex flex-col justify-between flex-1">
+            <span className="text-[9px] text-[#64748B] tracking-wider uppercase font-semibold">Risk Score</span>
+            <div className="text-2xl font-bold text-[#EF4444] font-heading tracking-tight mt-1">84%</div>
+            <div className="h-1 bg-white/5 rounded-full overflow-hidden mt-2">
+              <div className="h-full bg-[#EF4444] w-[84%] animate-pulse" />
+            </div>
+            <span className="text-[8px] text-[#EF4444] mt-1.5 uppercase font-bold tracking-wider">// CRITICAL LEVEL</span>
+          </div>
+
+          {/* Ingress rate */}
+          <div className="bg-[#070B14]/85 border border-white/8 p-3 rounded-[4px] flex flex-col justify-between flex-1">
+            <span className="text-[9px] text-[#64748B] tracking-wider uppercase font-semibold">Ingest Ingress</span>
+            <div className="text-xl font-bold text-white tracking-tight mt-1">4.2k/s</div>
+            <div className="flex gap-1 items-end h-[24px] mt-2">
+              {[50, 35, 75, 45, 90, 60, 85, 80].map((h, i) => (
+                <div
+                  key={i}
+                  className="bg-[#00E5A8] opacity-60 w-full rounded-[1px]"
+                  style={{ height: `${h}%` }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Center/Right Column: Attack Path Visualizer */}
+        <div className="col-span-8 bg-[#070B14]/85 border border-white/8 rounded-[4px] relative overflow-hidden p-3 flex flex-col justify-between">
+          <span className="text-[9px] text-[#64748B] tracking-wider uppercase font-semibold">// INTRUSION_VECTOR_RADAR</span>
+
+          {/* Attack Path Canvas SVG */}
+          <div className="flex-grow relative flex items-center justify-center min-h-[160px]">
+            <svg viewBox="0 0 100 80" className="w-full h-full text-white/5 select-none relative z-10">
+              {/* Radial radar grid lines */}
+              <circle cx="50" cy="40" r="30" fill="none" stroke="currentColor" strokeWidth="0.3" strokeDasharray="1 3" />
+              <circle cx="50" cy="40" r="20" fill="none" stroke="currentColor" strokeWidth="0.3" />
+              <circle cx="50" cy="40" r="10" fill="none" stroke="currentColor" strokeWidth="0.3" />
+
+              {/* Connecting Attack Vector Paths */}
+              <path d="M 15,20 L 50,40" fill="none" stroke="#EF4444" strokeWidth="0.5" strokeDasharray="1.5 1.5">
+                <animate attributeName="stroke-dashoffset" values="10;0" dur="2s" repeatCount="indefinite" />
+              </path>
+              <path d="M 85,25 L 50,40" fill="none" stroke="#F59E0B" strokeWidth="0.5">
+                <animate attributeName="opacity" values="0.2;1;0.2" dur="3s" repeatCount="indefinite" />
+              </path>
+              <path d="M 25,65 L 50,40" fill="none" stroke="#22C55E" strokeWidth="0.5" />
+
+              {/* Nodes */}
+              <g>
+                <circle cx="15" cy="20" r="2" fill="#EF4444" />
+                <circle cx="15" cy="20" r="4" fill="none" stroke="#EF4444" strokeWidth="0.3">
+                  <animate attributeName="r" values="2;5;2" dur="1.5s" repeatCount="indefinite" />
+                </circle>
+              </g>
+
+              <g>
+                <circle cx="85" cy="25" r="2" fill="#F59E0B" />
+              </g>
+
+              <g>
+                <circle cx="25" cy="65" r="2" fill="#22C55E" />
+              </g>
+
+              {/* Central Target Node (Gateway) */}
+              <g>
+                <circle cx="50" cy="40" r="3" fill="#00E5A8" />
+                <circle cx="50" cy="40" r="7" fill="none" stroke="#00E5A8" strokeWidth="0.4">
+                  <animate attributeName="r" values="3;9;3" dur="2s" repeatCount="indefinite" />
+                </circle>
+              </g>
+            </svg>
+
+            {/* Labels overlay */}
+            <div className="absolute top-2 left-2 right-2 flex justify-between text-[8px] font-mono text-[#94A3B8]">
+              <span className="text-[#EF4444] animate-pulse">SQLi: 185.220.101.44</span>
+              <span className="text-[#F59E0B]">PROBE: 203.0.113.57</span>
+            </div>
+
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-[8px] font-mono text-[#00E5A8] tracking-widest font-bold bg-[#111827]/95 px-2 py-0.5 border border-[#00E5A8]/20 rounded-[2px] whitespace-nowrap">
+              TARGET: API_GATEWAY_NODE
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Top Left Scanning Telemetry */}
-      <div className="absolute top-4 left-4 z-20 font-mono text-[9px] text-cyan-500/50 space-y-1">
-        <div>SYS.MONITOR // ONLINE</div>
-        <div>RESOLVED_NODES: 124/124</div>
+      {/* Live Threat Logs ticker at bottom */}
+      <div className="h-[100px] border-t border-white/8 mt-4 pt-3 flex flex-col gap-1.5 overflow-hidden min-h-0 text-[10px] text-[#94A3B8]">
+        {tickerLines.slice(-3).map((line, i) => {
+          let badgeColor = "border-[#64748B] text-[#94A3B8]";
+          if (line.type === "danger") badgeColor = "border-[#EF4444] text-[#EF4444]";
+          else if (line.type === "warning") badgeColor = "border-[#F59E0B] text-[#F59E0B]";
+          else if (line.type === "db") badgeColor = "border-[#00E5A8] text-[#00E5A8]";
+
+          return (
+            <div
+              key={i}
+              className="flex justify-between items-center bg-white/2 py-1 px-2 border-l-2 rounded-[2px]"
+              style={{ borderColor: line.type === "danger" ? "#EF4444" : line.type === "warning" ? "#F59E0B" : "#00E5A8" }}
+            >
+              <span className={`font-bold uppercase tracking-wider text-[8px]`}>{line.type}</span>
+              <span className="text-white truncate max-w-[260px] ml-2 font-mono">{line.text}</span>
+              <span className="text-[#64748B] text-[9px] font-mono ml-auto">ACTIVE</span>
+            </div>
+          );
+        })}
+        {tickerLines.length === 0 && (
+          <div className="flex items-center justify-center h-full text-[#64748B] font-mono">
+            // CORRELATION_TICKER_OFFLINE
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-// ─── Feature cards ────────────────────────────────────────────────────────
-const features = [
-  {
-    icon: FileSearch,
-    title: "Security Log Parsing",
-    description: "Upload Apache, Nginx, Syslog, and Linux auth logs. Autodetect formats and extract key metadata variables instantly.",
-    color: "#00d9ff",
-    glow: "rgba(0, 217, 255, 0.1)",
-  },
-  {
-    icon: AlertTriangle,
-    title: "Pattern Detection Engine",
-    description: "Identify brute force, SQL injections, directory traversals, credential stuffing, and unauthorized escalations.",
-    color: "#ff3b5c",
-    glow: "rgba(255, 59, 92, 0.1)",
-  },
-  {
-    icon: Eye,
-    title: "Gemini AI Threat Analyst",
-    description: "Gemini 2.5 Flash acts as a tier-1 SOC analyst, explaining threats, root causes, evidence, and remediation steps.",
-    color: "#8b5cf6",
-    glow: "rgba(139, 92, 246, 0.1)",
-  },
-  {
-    icon: BarChart2,
-    title: "Command Center Dashboard",
-    description: "Inspect log files using beautiful visual trend lines, attack categories, risk scoring gauges, and alert timelines.",
-    color: "#00ff88",
-    glow: "rgba(0, 255, 136, 0.1)",
-  },
-  {
-    icon: MessageSquare,
-    title: "Interactive SOC Chat",
-    description: "Ask your personal security analyst anything. Query logs, troubleshoot vulnerabilities, or write custom detection rules.",
-    color: "#ffb800",
-    glow: "rgba(255, 184, 0, 0.1)",
-  },
-  {
-    icon: GitBranch,
-    title: "GitHub Repository Scanner",
-    description: "Scan public or private repositories for exposed API tokens, passwords, database credentials, and secret strings.",
-    color: "#a78bfa",
-    glow: "rgba(167, 139, 250, 0.1)",
-  },
-];
-
-// ─── Steps ────────────────────────────────────────────────────────────────
-const steps = [
-  { number: "01", title: "Feed Logs", description: "Drag & drop files like Nginx access logs, auth.log, raw CSVs, or unformatted text." },
-  { number: "02", title: "Scan Rules", description: "Our engine executes 7 pattern-matching heuristics to detect brute force, SQLi, and traversals." },
-  { number: "03", title: "AI Correlation", description: "Gemini correlates matching entries, evaluates attack severity, and writes incident outlines." },
-  { number: "04", title: "Export Briefings", description: "Download a structured executive summary PDF containing affected assets, IoCs, and timelines." },
-];
-
-// ─── Testimonials ─────────────────────────────────────────────────────────
-const testimonials = [
-  {
-    name: "Sarah Chen",
-    role: "Lead SOC Analyst · CyberShield Inc",
-    avatar: "SC",
-    content: "ThreatHunter AI cut our initial log triage times by 80%. The AI security explanations are extremely useful for training junior analysts.",
-    stars: 5,
-  },
-  {
-    name: "Marcus Rodriguez",
-    role: "Cybersecurity Student · Defend Academy",
-    avatar: "MR",
-    content: "An absolute goldmine for students. I can feed it real honeypot logs and get immediate, plain-English explanations of how the attack unfolded.",
-    stars: 5,
-  },
-  {
-    name: "Alex Kim",
-    role: "Penetration Tester · RedTeam Labs",
-    avatar: "AK",
-    content: "The GitHub scanner flagged exposed dev credentials in a client's public repository before I even began running manual scripts. Outstanding utility.",
-    stars: 5,
-  },
-];
-
-// ─── FAQ ──────────────────────────────────────────────────────────────────
-const faqs = [
-  { q: "What log formats are supported?", a: "We support Apache Combined Format, Nginx access logs, Linux Syslog, Linux authentication logs (auth.log), CSV dumps, and generic unstructured text files." },
-  { q: "Is my log data sent to external servers?", a: "No. Your log parsing and threat patterns run completely in-browser or locally on your node. Raw logs are only sent to the AI engine for specific intelligence queries, which you control using your own API credentials." },
-  { q: "How does the rule engine identify attacks?", a: "We apply 7 security heuristics including failed credential counting, common SQL injection regex patterns, XSS script tag checking, and path traversal strings." },
-  { q: "Is the GitHub repository scanner free?", a: "Yes. Public repository scanning works instantly without any authentication. For private repository scans, you can configure your own GitHub Personal Access Token." },
-];
-
-export default function LandingPage() {
-  const [loadingSignIn, setLoadingSignIn] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  const handleSignIn = async () => {
-    setLoadingSignIn(true);
-    await signIn("google", { callbackUrl: "/dashboard" });
-  };
-
+export default function RedesignedLandingPage() {
   return (
-    <div className="min-h-screen text-white" style={{ background: "transparent" }}>
-      {/* ── Navbar ────────────────────────────────────────────────────── */}
-      <nav className="fixed top-0 left-0 right-0 z-50" style={{ background: "rgba(5, 5, 5, 0.8)", backdropFilter: "blur(16px)", borderBottom: "1px solid rgba(0, 217, 255, 0.1)" }}>
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield size={22} className="text-cyan-400" />
-            <span className="text-lg font-bold font-heading tracking-wide">
-              THREAT<span className="text-emerald-400">HUNTER</span> <span className="text-xs font-mono px-1.5 py-0.5 rounded border border-cyan-500/20 text-cyan-400 bg-cyan-950/20">COM_EDITION</span>
+    <div className="landing-theme min-h-screen relative overflow-x-hidden selection:bg-[#00E5A8] selection:text-[#070B14]">
+      {/* ── Floating Sticky Navigation Bar ────────────────────────────── */}
+      <nav className="sticky top-0 left-0 right-0 z-50 h-[64px] bg-[#070B14]/70 backdrop-blur-md border-b border-white/8">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8 h-full flex items-center justify-between">
+          <div className="flex items-center">
+            <span className="font-heading font-extrabold text-white text-[20px] tracking-tight">
+              THREAT<span className="text-[#00E5A8]">HUNTER</span>
             </span>
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            {["Features", "How It Works", "Community", "FAQ"].map((item) => (
-              <a key={item} href={`#${item.toLowerCase().replace(/ /g, "-")}`}
-                className="text-sm font-medium text-gray-400 hover:text-cyan-400 transition-colors font-heading"
+
+          {/* Centered navigation links */}
+          <div className="hidden md:flex items-center gap-[36px] absolute left-1/2 -translate-x-1/2">
+            {[
+              { href: "#features", label: "Features" },
+              { href: "#demo", label: "Demo" },
+              { href: "#docs", label: "Documentation" },
+              { href: "https://github.com/Juhamim/threathunder-production", label: "GitHub", external: true },
+            ].map((link) => (
+              <a
+                key={link.label}
+                href={link.href}
+                target={link.external ? "_blank" : undefined}
+                rel={link.external ? "noopener noreferrer" : undefined}
+                className="text-[13px] font-medium tracking-wide text-[#94A3B8] hover:text-[#00E5A8] transition-colors"
               >
-                {item}
+                {link.label}
               </a>
             ))}
           </div>
-          <div className="flex items-center gap-3">
-            <Link href="/sign-in" className="btn-ghost text-xs">Sign In</Link>
-            <button onClick={handleSignIn} disabled={loadingSignIn} className="btn-primary text-xs">
-              {loadingSignIn ? "Accessing SOC..." : "Launch Console"}
-            </button>
+
+          {/* Right side launch console CTA */}
+          <div className="flex items-center">
+            <Link
+              href="/dashboard"
+              className="btn-landing-primary shadow-lg"
+              style={{ backgroundColor: "#00E5A8", color: "#070B14", border: "1px solid #00E5A8", height: "38px", padding: "0 18px", fontSize: "13px" }}
+            >
+              Launch Console
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ──────────────────────────────────────────────────────── */}
-      <section className="relative min-h-screen flex items-center cyber-grid pt-16">
-        <div className="max-w-7xl mx-auto px-6 py-24 grid lg:grid-cols-2 gap-12 items-center relative z-10">
-          {/* Left */}
-          <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-            {/* Live operational badge */}
-            <motion.div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-8 text-xs font-mono"
-              style={{ background: "rgba(0, 255, 136, 0.05)", border: "1px solid rgba(0, 255, 136, 0.2)", color: "#00ff88" }}
-              animate={{ opacity: [1, 0.7, 1] }} transition={{ duration: 3, repeat: Infinity }}
+      {/* ── Hero Section ──────────────────────────────────────────────── */}
+      <section className="relative min-h-[calc(100vh-64px)] w-full grid grid-cols-1 lg:grid-cols-2 pt-[64px] pb-[80px] overflow-hidden max-w-[1400px] mx-auto px-6 md:px-8 items-center gap-12 lg:gap-16">
+        {/* Left Side Info Panel */}
+        <div className="flex flex-col justify-center gap-[28px] max-w-[640px] w-full relative z-10 text-center lg:text-left mx-auto lg:mx-0">
+          <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#00E5A8] font-bold">
+            // Free & Open Source · No Sign-Up Required
+          </div>
+
+          <h1 className="text-white tracking-tight leading-[0.95] font-extrabold" style={{ fontSize: "clamp(48px, 6.5vw, 84px)", fontFamily: "'Syne', sans-serif" }}>
+            Hunt Threats <br className="hidden md:inline" />Before They Hunt You.
+          </h1>
+
+          <p className="text-[#94A3B8] leading-[1.8] text-[18px] md:text-[20px] font-normal max-w-[540px] mx-auto lg:mx-0">
+            Detect attacks, leaked secrets, credential abuse, suspicious activity, and security anomalies in seconds using AI-powered threat hunting.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-[14px] justify-center lg:justify-start w-full">
+            <Link
+              href="/dashboard"
+              className="btn-landing-primary min-w-[190px] justify-center"
+              style={{ backgroundColor: "#00E5A8", color: "#070B14", border: "1px solid #00E5A8" }}
             >
-              <div className="status-dot" />
-              SYSTEM_MONITOR: RUNNING
-            </motion.div>
+              Start Hunting Free
+            </Link>
+            <a
+              href="#demo"
+              className="btn-landing-ghost min-w-[150px] justify-center"
+              style={{ color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}
+            >
+              View Demo
+            </a>
+            <a
+              href="https://github.com/Juhamim/threathunder-production"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-landing-ghost min-w-[180px] justify-center gap-2"
+              style={{ color: "#FFFFFF", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.03)" }}
+            >
+              <svg className="w-4 h-4 fill-current mr-1" viewBox="0 0 24 24">
+                <path d="M12 2A10 10 0 002 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z" />
+              </svg>
+              View Repository
+            </a>
+          </div>
 
-            <h1 className="text-5xl lg:text-6xl font-black leading-[1.1] mb-6 font-heading tracking-tight">
-              See Threats Before <br />
-              They Become <span className="gradient-text">Breaches.</span>
-            </h1>
-
-            <p className="text-base md:text-lg mb-8 text-gray-400 max-w-lg leading-relaxed">
-              AI-powered threat intelligence built for developers, students, and modern security teams.
-            </p>
-
-            <div className="flex flex-wrap gap-4 mb-12">
-              <button onClick={handleSignIn} disabled={loadingSignIn}
-                className="btn-primary flex items-center gap-2 text-sm px-6 py-3.5">
-                <Terminal size={16} />
-                {loadingSignIn ? "Initializing..." : "Start Threat Analysis"}
-                <ArrowRight size={14} />
-              </button>
-              <a href="#how-it-works" className="btn-ghost flex items-center gap-2 text-sm px-6 py-3.5">
-                <Activity size={16} className="text-cyan-400" />
-                Watch Live Demo
-              </a>
-            </div>
-
-            {/* Micro details */}
-            <div className="flex flex-wrap gap-6 text-xs text-gray-500 font-mono">
-              <div className="flex items-center gap-2">
-                <CheckCircle size={12} className="text-emerald-400" />
-                100% Free & MIT Licensed
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle size={12} className="text-emerald-400" />
-                No Credit Card Required
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle size={12} className="text-emerald-400" />
-                Self-Hostable Core
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Right — 3D Cyber Globe */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.15 }}
-            className="w-full"
-          >
-            <InteractiveGlobe />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ── Features ──────────────────────────────────────────────────── */}
-      <section id="features" className="py-24 relative border-t border-gray-900/50">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Tactical Modules</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 font-heading tracking-tight">
-              Enterprise SOC Capabilities
-            </h2>
-            <p className="text-sm md:text-base max-w-xl mx-auto mt-3 text-gray-400">
-              Ingest, parse, correlate, and analyze log files using modular rule layers and automated Gemini context extraction.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, i) => (
-              <motion.div
-                key={feature.title}
-                className="glass-card p-6"
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.08 }}
+          {/* Trust Badges */}
+          <div className="flex flex-wrap gap-4 mt-2 justify-center lg:justify-start">
+            {[
+              "Open Source",
+              "No Account Required",
+              "Privacy First",
+              "Local Processing",
+              "MIT Licensed",
+            ].map((badge) => (
+              <span
+                key={badge}
+                className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-[#94A3B8] bg-white/2 border border-white/5 px-3 py-1.5 rounded-[2px]"
               >
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4"
-                  style={{ background: feature.glow, border: `1px solid ${feature.color}20` }}>
-                  <feature.icon size={18} style={{ color: feature.color }} />
-                </div>
-                <h3 className="text-base font-bold mb-2 font-heading text-white">{feature.title}</h3>
-                <p className="text-xs leading-relaxed text-gray-400">{feature.description}</p>
-              </motion.div>
+                <Check size={11} className="text-[#00E5A8]" />
+                {badge}
+              </span>
             ))}
           </div>
         </div>
-      </section>
 
-      {/* ── How It Works ──────────────────────────────────────────────── */}
-      <section id="how-it-works" className="py-24 relative border-t border-gray-900/50" style={{ background: "rgba(8, 8, 8, 0.4)" }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <span className="text-xs font-mono uppercase tracking-widest text-purple-400">Pipeline Pipeline</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 font-heading tracking-tight">Four Step Ingestion & Triage</h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((step, i) => (
-              <motion.div key={step.number} className="relative"
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-10 left-full w-full h-[1px] z-10"
-                    style={{ background: "linear-gradient(90deg, rgba(0,217,255,0.25), transparent)" }} />
-                )}
-                <div className="glass-card p-6 h-full border border-gray-800/40">
-                  <div className="text-4xl font-black mb-4 gradient-text font-mono tracking-tight">{step.number}</div>
-                  <h3 className="text-sm font-bold mb-2 font-heading text-white">{step.title}</h3>
-                  <p className="text-xs leading-relaxed text-gray-400">{step.description}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+        {/* Right Side Cybersecurity Visual */}
+        <div className="w-full relative flex items-center justify-center">
+          <PremiumSecurityVisual />
         </div>
       </section>
 
-      {/* ── Testimonials ──────────────────────────────────────────────── */}
-      <section className="py-24 border-t border-gray-900/50">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <span className="text-xs font-mono uppercase tracking-widest text-pink-400">Feedback</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 font-heading tracking-tight">Trusted by Security Professionals</h2>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t, i) => (
-              <motion.div key={t.name} className="glass-card p-6 border border-gray-800/40"
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} size={12} fill="#ffb800" style={{ color: "#ffb800" }} />
-                  ))}
-                </div>
-                <p className="text-xs leading-relaxed mb-6 text-gray-300">"{t.content}"</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
-                    style={{ background: "linear-gradient(135deg, #00d9ff, #00ff88)", color: "#050505" }}>
-                    {t.avatar}
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white font-heading">{t.name}</div>
-                    <div className="text-[10px] text-gray-500 font-mono">{t.role}</div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Community / Free Section (Replaces Pricing) ────────────────── */}
-      <section id="community" className="py-24 border-t border-gray-900/50" style={{ background: "rgba(8, 8, 8, 0.4)" }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <span className="text-xs font-mono uppercase tracking-widest text-emerald-400">Open Source</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 font-heading tracking-tight">100% Free & Self-Hostable</h2>
-            <p className="text-sm max-w-xl mx-auto mt-3 text-gray-400">
-              No subscription tiers, no credit cards, and no user limits. Host on your own infrastructure or run fully offline.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {/* Box 1: Local setup */}
-            <motion.div
-              className="glass-card p-6 border border-cyan-500/10 flex flex-col justify-between"
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            >
-              <div>
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 bg-cyan-500/10 border border-cyan-500/20">
-                  <Server size={18} className="text-cyan-400" />
-                </div>
-                <h3 className="text-base font-bold font-heading mb-2">Local Deployment</h3>
-                <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                  Set up the stack locally on your machine in under 2 minutes. Configured to boot using Docker or standard Node processes.
-                </p>
-              </div>
-              <div className="font-mono text-[10px] bg-black/60 p-3 rounded border border-gray-800 text-cyan-400 select-all">
-                git clone threathunter-ai<br />
-                npm install && npm run dev
-              </div>
-            </motion.div>
-
-            {/* Box 2: Features */}
-            <motion.div
-              className="glass-card p-6 border border-emerald-500/10 flex flex-col justify-between"
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.08 }}
-            >
-              <div>
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 bg-emerald-500/10 border border-emerald-500/20">
-                  <Code size={18} className="text-emerald-400" />
-                </div>
-                <h3 className="text-base font-bold font-heading mb-2">Community Edition</h3>
-                <p className="text-xs text-gray-400 leading-relaxed">
-                  Get full access to Nginx/Apache logs parsing, 7+ built-in signature rules, Recharts graphs, and the GitHub scanner.
-                </p>
-              </div>
-              <ul className="space-y-2 mt-6">
-                {["Unlimited Ingestion", "Complete Ruleset", "PDF Report Exports"].map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-[11px] text-gray-400 font-mono">
-                    <CheckCircle size={10} className="text-emerald-400" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </motion.div>
-
-            {/* Box 3: Privacy */}
-            <motion.div
-              className="glass-card p-6 border border-purple-500/10 flex flex-col justify-between"
-              initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.16 }}
-            >
-              <div>
-                <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-4 bg-purple-500/10 border border-purple-500/20">
-                  <Key size={18} className="text-purple-400" />
-                </div>
-                <h3 className="text-base font-bold font-heading mb-2">Complete Privacy</h3>
-                <p className="text-xs text-gray-400 leading-relaxed mb-6">
-                  Your security logs never touch external developer servers. Configure your own API key to query Gemini 2.5 directly.
-                </p>
-              </div>
-              <button onClick={handleSignIn} className="btn-primary text-xs w-full py-2.5">
-                Launch Console
-              </button>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FAQ ───────────────────────────────────────────────────────── */}
-      <section id="faq" className="py-24 border-t border-gray-900/50">
-        <div className="max-w-3xl mx-auto px-6">
-          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <span className="text-xs font-mono uppercase tracking-widest text-cyan-400">Help Center</span>
-            <h2 className="text-3xl md:text-4xl font-bold mt-2 font-heading tracking-tight">Frequently Asked Questions</h2>
-          </motion.div>
-
-          <div className="flex flex-col gap-3">
-            {faqs.map((faq, i) => (
-              <motion.div key={i} className="glass-card overflow-hidden"
-                initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
-                <button className="w-full text-left p-5 flex items-center justify-between"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}>
-                  <span className="text-sm font-semibold font-heading text-white">{faq.q}</span>
-                  <ChevronRight size={14} className="text-gray-500" style={{ transform: openFaq === i ? "rotate(90deg)" : "none", transition: "transform 0.2s" }} />
-                </button>
-                {openFaq === i && (
-                  <div className="px-5 pb-5 text-xs leading-relaxed text-gray-400 border-t border-gray-900/30 pt-3">
-                    {faq.a}
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA Banner ────────────────────────────────────────────────── */}
-      <section className="py-24 relative overflow-hidden border-t border-gray-900/50" style={{ background: "rgba(8, 8, 8, 0.4)" }}>
-        <div className="max-w-4xl mx-auto px-6 text-center relative z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-            <h2 className="text-4xl md:text-5xl font-black mb-6 font-heading tracking-tight">
-              Launch Your Security <br />
-              <span className="gradient-text">Command Center.</span>
+      {/* ── Features Section ─────────────────────────────────────────── */}
+      <section id="features" className="py-32 border-t border-white/5 bg-[#0D1321]/45">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8">
+          <div className="mb-20 text-center lg:text-left">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
+              // THREAT DETECTION CAPABILITIES
+            </span>
+            <h2 className="mt-3 text-white font-extrabold text-3xl md:text-5xl" style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "-0.03em" }}>
+              What ThreatHunter Does
             </h2>
-            <p className="text-sm md:text-base mb-8 text-gray-400 max-w-md mx-auto leading-relaxed">
-              Analyze logs, identify vulnerability patterns, and generate professional incident summaries today.
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Card 1: AI Log Analysis */}
+            <div className="glass-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+              <div>
+                <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
+                  <FileText size={22} className="text-[#00E5A8]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  AI Log Analysis
+                </h3>
+                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                  Upload logs and instantly correlate threat signatures. The parser auto-detects fields to scan for SQL Injection, Cross-Site Scripting (XSS), Brute Force, authentication anomalies, and pattern logs, delivering briefs in seconds.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2: GitHub Secret Scanner */}
+            <div className="glass-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+              <div>
+                <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
+                  <Key size={22} className="text-[#00E5A8]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  GitHub Secret Scanner
+                </h3>
+                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                  Scan any public or private GitHub repository for exposed API keys, active tokens, credentials, hardcoded passwords, and security misconfigurations across all commit trees and files.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3: Live Threat Dashboard */}
+            <div className="glass-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+              <div>
+                <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
+                  <Shield size={22} className="text-[#00E5A8]" />
+                </div>
+                <h3 className="text-xl font-bold mb-3 text-white" style={{ fontFamily: "'Syne', sans-serif" }}>
+                  Live Threat Dashboard
+                </h3>
+                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                  Monitor active incidents in real time. Features a tactical attack paths radar, severity categorization (Critical, High, Medium, Low), incident volume trends, and SOC investigation workflows.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── How It Works Section ──────────────────────────────────────── */}
+      <section id="demo" className="py-32 border-t border-white/5">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8">
+          <div className="mb-20 text-center">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
+              // ARCHITECTURAL PIPELINE
+            </span>
+            <h2 className="mt-3 text-white font-extrabold text-3xl md:text-5xl" style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "-0.03em" }}>
+              How It Works
+            </h2>
+          </div>
+
+          {/* Visual Workflow Steps */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative items-start">
+            {[
+              {
+                step: "01",
+                title: "Upload Logs",
+                desc: "Point the ingestion engine at security files or Nginx/Apache/Auth telemetry logs.",
+                icon: Terminal,
+              },
+              {
+                step: "02",
+                title: "AI Analysis",
+                desc: "Gemini 2.5 Flash tokenizes, classifies, and evaluates anomalies on the records.",
+                icon: Cpu,
+              },
+              {
+                step: "03",
+                title: "Threat Detection",
+                desc: "The heuristics matching system identifies SQLi, XSS, and credential stuffing vectors.",
+                icon: Shield,
+              },
+              {
+                step: "04",
+                title: "Incident Report",
+                desc: "Get an executive SOC briefing complete with indicators of compromise, timeline, and mitigation actions.",
+                icon: Activity,
+              },
+            ].map((node, i) => (
+              <div key={node.step} className="relative flex flex-col items-center text-center p-6 bg-[#111827]/40 border border-white/5 rounded-[6px] h-full justify-between">
+                {/* Arrow connector */}
+                {i < 3 && (
+                  <div className="hidden md:block absolute top-1/2 -translate-y-1/2 -right-[18px] z-20 text-[#00E5A8] opacity-30 animate-pulse">
+                    <ArrowRight size={20} />
+                  </div>
+                )}
+                <div className="flex flex-col items-center">
+                  <div className="w-10 h-10 rounded-full bg-[#00E5A8]/10 border border-[#00E5A8]/30 flex items-center justify-center text-[#00E5A8] text-xs font-mono font-bold mb-4">
+                    {node.step}
+                  </div>
+                  <node.icon size={24} className="text-[#94A3B8] mb-4" />
+                  <h3 className="text-base font-bold text-white mb-2" style={{ fontFamily: "'Syne', sans-serif" }}>
+                    {node.title}
+                  </h3>
+                  <p className="text-xs text-[#94A3B8] leading-relaxed">
+                    {node.desc}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Open Source Section ────────────────────────────────────────── */}
+      <section className="py-32 border-t border-white/5 bg-[#0D1321]/45">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left Description Column */}
+          <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
+            <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
+              // TRANSPARENT SECURITY
+            </span>
+            <h2 className="text-white tracking-tight leading-none text-3xl md:text-5xl font-extrabold" style={{ fontFamily: "'Syne', sans-serif", letterSpacing: "-0.03em" }}>
+              100% Open Source. <br />Fully Transparent.
+            </h2>
+            <p className="text-[#94A3B8] text-sm md:text-base leading-relaxed max-w-[580px] mx-auto lg:mx-0">
+              ThreatHunter is built in the open by developer <span className="text-white font-bold">Juhamim</span>. Inspect the code, contribute improvements, deploy your own instance, or self-host without vendor lock-in. No trackers, no telemetry metrics leaving your network, and complete control over your keys.
             </p>
-            <button onClick={handleSignIn} disabled={loadingSignIn}
-              className="btn-primary text-sm px-8 py-3.5 inline-flex items-center gap-3 justify-center w-fit mx-auto">
-              <Shield size={16} />
-              {loadingSignIn ? "Initializing..." : "Launch Console Free"}
-              <ArrowRight size={14} />
-            </button>
-          </motion.div>
+
+            <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-[#94A3B8] bg-white/2 border border-white/5 px-3.5 py-1.5 rounded-[2px]">
+                <Check size={11} className="text-[#00E5A8]" />
+                MIT License
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-[#94A3B8] bg-white/2 border border-white/5 px-3.5 py-1.5 rounded-[2px]">
+                <Check size={11} className="text-[#00E5A8]" />
+                Community Driven
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-[#94A3B8] bg-white/2 border border-white/5 px-3.5 py-1.5 rounded-[2px]">
+                <Check size={11} className="text-[#00E5A8]" />
+                Privacy First
+              </span>
+            </div>
+          </div>
+
+          {/* Right Repositories Actions widget */}
+          <div className="lg:col-span-5 flex justify-center w-full">
+            <div className="bg-[#111827]/60 backdrop-blur-xl border border-white/8 p-6 rounded-[6px] space-y-5 w-full max-w-sm text-left shadow-2xl">
+              <div className="flex items-center justify-between font-mono text-[10px] text-[#64748B]">
+                <span>MIT CODEBASE</span>
+                <span className="text-[#00E5A8] font-bold">Juhamim/threathunder-production</span>
+              </div>
+              <div className="border-y border-white/5 py-4 flex flex-col gap-2 font-mono text-xs text-[#94A3B8]">
+                <div className="flex justify-between">
+                  <span>Developer</span>
+                  <span className="text-white">Juhamim</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Contact Email</span>
+                  <span className="text-white">juhaimmtm@gmail.com</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Dependencies</span>
+                  <span className="text-white">None (Vanilla / Next.js)</span>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a
+                  href="https://github.com/Juhamim/threathunder-production"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-landing-primary w-full justify-center h-10"
+                  style={{ backgroundColor: "#00E5A8", color: "#070B14", border: "1px solid #00E5A8" }}
+                >
+                  GitHub Repository
+                </a>
+                <Link
+                  href="/dashboard"
+                  className="btn-landing-ghost w-full justify-center h-10 border-white/8 hover:bg-white/5 text-white"
+                >
+                  Documentation
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA Section ─────────────────────────────────────────── */}
+      <section className="py-32 border-t border-white/5 text-center relative overflow-hidden bg-[#070B14]">
+        <div className="max-w-[720px] mx-auto px-6 relative z-10">
+          <h2 className="text-white font-extrabold tracking-tight font-heading leading-none" style={{ fontSize: "clamp(32px, 5vw, 52px)", fontFamily: "'Syne', sans-serif" }}>
+            Start hunting threats now.
+          </h2>
+          <p className="text-[#94A3B8] mt-3 font-mono text-xs uppercase tracking-wider">
+            Free. Open source. No account required.
+          </p>
+
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <Link
+              href="/dashboard"
+              className="btn-landing-primary min-w-[220px]"
+              style={{ backgroundColor: "#00E5A8", color: "#070B14", border: "1px solid #00E5A8" }}
+            >
+              Launch Console →
+            </Link>
+
+            <div className="mt-4 max-w-sm w-full bg-[#111827]/40 border border-white/5 px-4 py-3 rounded-[4px] relative flex items-center justify-center">
+              <code className="font-mono text-[11px] text-[#00E5A8] truncate select-all">
+                git clone https://github.com/Juhamim/threathunder-production.git
+              </code>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── Footer ────────────────────────────────────────────────────── */}
-      <footer className="border-t border-gray-900/50" style={{ background: "rgba(5, 5, 5, 0.95)" }}>
-        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <Shield size={18} className="text-cyan-400" />
-            <span className="font-bold font-heading text-sm text-white">THREAT<span className="text-emerald-400">HUNTER</span></span>
+      <footer className="border-t border-white/5 bg-[#070B14] text-[#94A3B8] py-20 relative z-10">
+        <div className="max-w-[1400px] mx-auto px-6 md:px-8 flex flex-col gap-16">
+          {/* Main Footer Links */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-left">
+            <div>
+              <span className="font-heading font-extrabold text-white text-[13px] tracking-wider uppercase block mb-4">
+                Product
+              </span>
+              <ul className="space-y-2.5 text-xs text-[#64748B]">
+                <li><a href="#features" className="hover:text-[#00E5A8] transition-colors">Features</a></li>
+                <li><a href="#demo" className="hover:text-[#00E5A8] transition-colors">Demo</a></li>
+                <li><Link href="/dashboard" className="hover:text-[#00E5A8] transition-colors">Documentation</Link></li>
+              </ul>
+            </div>
+            <div>
+              <span className="font-heading font-extrabold text-white text-[13px] tracking-wider uppercase block mb-4">
+                Open Source
+              </span>
+              <ul className="space-y-2.5 text-xs text-[#64748B]">
+                <li><a href="https://github.com/Juhamim/threathunder-production" target="_blank" rel="noopener noreferrer" className="hover:text-[#00E5A8] transition-colors">GitHub</a></li>
+                <li><span className="text-white/40">MIT License</span></li>
+                <li><a href="https://github.com/Juhamim/threathunder-production" target="_blank" rel="noopener noreferrer" className="hover:text-[#00E5A8] transition-colors">Contributing</a></li>
+              </ul>
+            </div>
+            <div>
+              <span className="font-heading font-extrabold text-white text-[13px] tracking-wider uppercase block mb-4">
+                Community
+              </span>
+              <ul className="space-y-2.5 text-xs text-[#64748B]">
+                <li><a href="https://github.com/Juhamim/threathunder-production/discussions" target="_blank" rel="noopener noreferrer" className="hover:text-[#00E5A8] transition-colors">Discussions</a></li>
+                <li><a href="https://github.com/Juhamim/threathunder-production/issues" target="_blank" rel="noopener noreferrer" className="hover:text-[#00E5A8] transition-colors">Issues</a></li>
+                <li><a href="https://github.com/Juhamim/threathunder-production/releases" target="_blank" rel="noopener noreferrer" className="hover:text-[#00E5A8] transition-colors">Releases</a></li>
+              </ul>
+            </div>
+            <div>
+              <span className="font-heading font-extrabold text-white text-[13px] tracking-wider uppercase block mb-4">
+                Company
+              </span>
+              <ul className="space-y-2.5 text-xs text-[#64748B]">
+                <li><span className="text-white/40">About</span></li>
+                <li><span className="text-white/40">Contact</span></li>
+              </ul>
+            </div>
           </div>
-          <div className="text-xs text-gray-500 font-mono">
-            © 2026 ThreatHunter AI. MIT Licensed. Created for the global developer community.
-          </div>
-          <div className="flex gap-6 text-xs text-gray-500 font-mono">
-            <a href="https://github.com/google/threathunter-ai" target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-              <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-              </svg>
-              GitHub
-            </a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-cyan-400 transition-colors">Terms</a>
+
+          {/* Bottom attribution copyright line */}
+          <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row justify-between items-center text-xs text-[#64748B] gap-4">
+            <div className="flex flex-col items-start gap-1 text-left">
+              <span className="font-heading font-extrabold text-white text-[16px]">
+                THREAT<span className="text-[#00E5A8]">HUNTER</span>
+              </span>
+              <span className="text-[10px] text-[#64748B] font-mono">
+                Developed by <a href="https://github.com/Juhamim" target="_blank" rel="noopener noreferrer" className="text-[#00E5A8] hover:underline">Juhamim</a>
+              </span>
+            </div>
+            <div className="font-mono text-[11px]">
+              © 2026 ThreatHunter. Open-source SOC developed by Juhamim (juhaimmtm@gmail.com).
+            </div>
           </div>
         </div>
       </footer>

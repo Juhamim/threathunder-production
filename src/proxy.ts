@@ -1,5 +1,12 @@
 import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+
+function getPublicBaseUrl(req: NextRequest): string {
+  const headers = req.headers;
+  const proto = headers.get("x-forwarded-proto") || "http";
+  const host = headers.get("x-forwarded-host") || headers.get("host") || "localhost:3000";
+  return `${proto}://${host}`;
+}
 
 export default auth((req) => {
   const { nextUrl } = req;
@@ -16,12 +23,14 @@ export default auth((req) => {
     nextUrl.pathname.startsWith("/chat") ||
     nextUrl.pathname.startsWith("/scanner");
 
+  const baseUrl = getPublicBaseUrl(req);
+
   if (isAuthPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+    return NextResponse.redirect(new URL("/dashboard", baseUrl));
   }
 
   if (isProtected && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/sign-in", nextUrl));
+    return NextResponse.redirect(new URL("/sign-in", baseUrl));
   }
 
   return NextResponse.next();

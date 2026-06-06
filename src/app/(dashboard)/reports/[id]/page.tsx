@@ -83,7 +83,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const riskColor = getRiskColor(report.riskScore);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 print:space-y-4">
+    <div className="w-full max-w-[1500px] mx-auto space-y-6 print:space-y-4">
       {/* Nav */}
       <div className="flex items-center justify-between print:hidden">
         <Link href="/reports" className="btn-ghost text-sm flex items-center gap-2">

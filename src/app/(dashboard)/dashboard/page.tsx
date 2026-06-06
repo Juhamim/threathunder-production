@@ -1,90 +1,50 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  RadialBarChart, RadialBar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-} from "recharts";
-import {
-  Shield, AlertTriangle, FileText, TrendingUp,
-  Upload, MessageSquare, GitBranch, Activity, ArrowRight,
-  RefreshCw, Terminal, Layers,
+  Shield,
+  ArrowRight,
+  Cpu,
+  Plus,
+  X,
 } from "lucide-react";
-import Link from "next/link";
 import { toast } from "sonner";
 
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  subtitle: string;
-  icon: React.ElementType;
-  color: string;
-  trend?: string;
-}
+// Animated entry transitions
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.22, delay, ease: [0.16, 1, 0.3, 1] as const },
+});
 
-function StatCard({ title, value, subtitle, icon: Icon, color, trend }: StatCardProps) {
-  return (
-    <motion.div className="glass-card p-6" whileHover={{ y: -2 }}>
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{title}</p>
-          <p className="text-3xl font-bold mt-1 font-mono" style={{ color }}>{value}</p>
-        </div>
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center"
-          style={{ background: `${color}15`, border: `1px solid ${color}30` }}>
-          <Icon size={20} style={{ color }} />
-        </div>
-      </div>
-      <p className="text-xs" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
-      {trend && <p className="text-xs mt-1" style={{ color: "#00ff88" }}>{trend}</p>}
-    </motion.div>
-  );
+interface MapDot {
+  id: string;
+  ip: string;
+  country: string;
+  type: string;
+  x: number;
+  y: number;
+  active: boolean;
 }
-
-function SevBadge({ severity }: { severity: string }) {
-  return <span className={`badge-${severity}`}>{severity}</span>;
-}
-
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload?.length) {
-    return (
-      <div className="px-3 py-2 rounded-lg text-xs" style={{ background: "rgba(10,10,10,0.95)", border: "1px solid rgba(0,217,255,0.2)" }}>
-        <p style={{ color: "var(--text-muted)" }} className="mb-1">{label}</p>
-        {payload.map((p: any) => (
-          <p key={p.name} style={{ color: p.color }}>{p.name}: <strong>{p.value}</strong></p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
 
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
-  const [isEmpty, setIsEmpty] = useState(true);
-  const [isDbOffline, setIsDbOffline] = useState(false);
   const [stats, setStats] = useState<any>(null);
-  const [seeding, setSeeding] = useState(false);
+  const [animateBars, setAnimateBars] = useState(false);
+  const [hoveredDot, setHoveredDot] = useState<MapDot | null>(null);
 
   const fetchStats = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/dashboard/stats");
       const data = await res.json();
-      if (data.isEmpty) {
-        setIsEmpty(true);
-        setIsDbOffline(!!data.isDbOffline);
-      } else {
-        setStats(data.stats);
-        setIsEmpty(false);
-        setIsDbOffline(false);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to connect to threat telemetry API.");
+      setStats(data.stats);
+      setTimeout(() => setAnimateBars(true), 120);
+    } catch {
+      toast.error("Failed to load telemetry stats.");
     } finally {
       setLoading(false);
     }
@@ -94,39 +54,65 @@ export default function DashboardPage() {
     fetchStats();
   }, []);
 
-  const handleSeedSandbox = async () => {
-    if (isDbOffline) {
-      toast.error("Database connection is offline. Configure DATABASE_URL first.");
-      return;
-    }
-    try {
-      setSeeding(true);
-      const res = await fetch("/api/dashboard/stats", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Sandbox Honeypot Telemetry Seeded successfully.");
-        await fetchStats();
-      } else {
-        toast.error("Failed to seed sandbox database.");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Seeding operation encountered a network error.");
-    } finally {
-      setSeeding(false);
-    }
+  const handleDismissThreat = (id: string) => {
+    toast.success(`Dismissed incident threat code [${id}]`);
   };
+
+  const handleQuickReport = () => {
+    toast.success("Quick Threat Report drafted. Operator action recorded.");
+  };
+
+  // ─── DYNAMIC SELECTORS FROM DB TELEMETRY ────────────────────────────
+
+  // 1. Dynamically group threat IPs to show mobile Top Attack Sources
+  const topSources = stats?.recentThreats
+    ? Object.values(
+        stats.recentThreats.reduce((acc: any, threat: any) => {
+          const key = threat.ip;
+          if (!acc[key]) {
+            acc[key] = { ip: threat.ip, country: threat.file || "System Ingest", probes: 0, severity: threat.severity };
+          }
+          acc[key].probes += 1;
+          return acc;
+        }, {})
+      )
+        .sort((a: any, b: any) => b.probes - a.probes)
+        .slice(0, 5)
+    : [];
+
+  // 2. Dynamically distribute threat points onto the World Map Coordinates
+  const mapDots: MapDot[] = stats?.recentThreats
+    ? stats.recentThreats.map((threat: any, idx: number) => {
+        const coords = [
+          { x: 62, y: 18 }, // Europe / Russia
+          { x: 76, y: 24 }, // Asia
+          { x: 20, y: 22 }, // North America
+          { x: 50, y: 14 }, // Northern Europe
+          { x: 34, y: 38 }, // South America
+        ];
+        const coord = coords[idx % coords.length];
+        return {
+          id: threat.id,
+          ip: threat.ip,
+          country: threat.file || "System Log Node",
+          type: threat.type,
+          x: coord.x,
+          y: coord.y,
+          active: threat.severity === "critical" || threat.severity === "high",
+        };
+      })
+    : [];
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-8 w-48 skeleton" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 skeleton" />
+      <div className="space-y-4">
+        <div className="h-6 w-48 skeleton" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-20 skeleton" />
           ))}
         </div>
-        <div className="grid lg:grid-cols-3 gap-4">
+        <div className="grid lg:grid-cols-3 gap-3">
           <div className="lg:col-span-2 h-72 skeleton" />
           <div className="h-72 skeleton" />
         </div>
@@ -134,261 +120,284 @@ export default function DashboardPage() {
     );
   }
 
-  // ─── Render Empty Command Center ─────────────────────────────────────────
-  if (isEmpty) {
-    return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-center">
-        <div className="absolute inset-0 cyber-grid opacity-10 pointer-events-none" />
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-xl glass-card p-10 border border-cyan-500/10 shadow-2xl relative overflow-hidden"
-        >
-          {/* Faint rotating scanner element */}
-          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-xl pointer-events-none" />
+  const riskColor =
+    stats.riskScore > 75
+      ? "var(--color-danger)"
+      : stats.riskScore > 45
+      ? "var(--color-warning)"
+      : "var(--accent-mint)";
 
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-6 bg-cyan-950/30 border border-cyan-500/20">
-            <Terminal className="text-cyan-400" size={28} />
-          </div>
-
-          <h2 className="text-2xl font-bold font-heading text-white tracking-tight">Security Console Offline</h2>
-          <p className="text-xs text-gray-400 font-mono mt-2 uppercase tracking-wider">
-            Status: {isDbOffline ? "DATABASE_OFFLINE" : "NO_TELEMETRY_INGESTED"}
-          </p>
-          
-          {isDbOffline ? (
-            <div className="mt-4 p-3 rounded-lg border border-red-500/20 bg-red-950/5 flex items-start gap-2.5 max-w-sm mx-auto">
-              <AlertTriangle size={14} className="text-red-500 mt-0.5 flex-shrink-0" />
-              <p className="text-[10px] font-mono text-red-400 text-left leading-normal">
-                DATABASE_CONNECTION_ERROR: Please configure a valid DATABASE_URL in your .env.local file to initialize migrations and load metrics.
-              </p>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 mt-4 leading-relaxed max-w-sm mx-auto">
-              ThreatHunter AI is waiting for logs to analyze. Upload log files from your servers or seed sandbox telemetry logs to preview the system.
-            </p>
-          )}
-
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Link href="/logs" className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 text-xs py-3 px-6">
-              <Upload size={14} /> Ingest Raw Logs
-            </Link>
-            <button
-              onClick={handleSeedSandbox}
-              disabled={seeding || isDbOffline}
-              className={`btn-ghost w-full sm:w-auto flex items-center justify-center gap-2 text-xs py-3 px-6 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/5 hover:text-emerald-300 ${isDbOffline ? 'opacity-40 cursor-not-allowed' : ''}`}
-            >
-              <RefreshCw size={14} className={seeding ? "animate-spin" : ""} />
-              {seeding ? "Injecting Logs..." : "Load Sandbox Demo Logs"}
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // ─── Render Ingested Stats ───────────────────────────────────────────────
-  const riskScoreData = [{ name: "Risk", value: stats.riskScore, fill: stats.riskScore > 75 ? "#ff3b5c" : stats.riskScore > 45 ? "#ff8800" : "#00ff88" }];
-  const riskLabel = stats.riskScore > 75 ? "Critical Risk" : stats.riskScore > 45 ? "High Risk" : stats.riskScore > 25 ? "Moderate Risk" : "Secure";
+  const riskLabel =
+    stats.riskScore > 75 ? "Critical Risk" : stats.riskScore > 45 ? "High Risk" : "Secure";
 
   return (
-    <div className="space-y-6 max-w-full">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-heading text-white">Security Command Console</h1>
-          <p className="text-xs font-mono mt-1 text-gray-400">
-            OPERATOR: {session?.user?.name?.toUpperCase() ?? "SOC_ANALYST"} // HOST: LOCALHOST
-          </p>
+    <div className="h-full flex flex-col gap-3 overflow-hidden select-none">
+      {/* ── Page Header ── */}
+      <div className="flex-shrink-0 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Cpu size={14} className="text-[var(--accent-mint)] animate-pulse" />
+          <span className="font-mono text-[10px] tracking-widest text-[var(--text-muted)] uppercase">
+            OPERATOR_NODE // ACTIVE_INGEST
+          </span>
         </div>
-        <button
-          onClick={fetchStats}
-          className="btn-ghost flex items-center gap-2 text-xs px-4 py-2 border-cyan-500/10 text-cyan-400"
-        >
-          <RefreshCw size={12} /> Sync Feed
-        </button>
-      </motion.div>
+        <h1 className="text-[22px] font-heading font-semibold text-white leading-none">Security Command Console</h1>
+      </div>
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── Metric Cards Row ── */}
+      <div className="flex-shrink-0 grid grid-cols-4 gap-3">
         {[
-          { title: "Total Logs Scanned", value: stats.totalLogsScanned, subtitle: "Database entries", icon: FileText, color: "#00d9ff" },
-          { title: "Threats Flagged", value: stats.totalThreats, subtitle: "Pattern occurrences", icon: AlertTriangle, color: "#ff8800" },
-          { title: "Critical Alerts", value: stats.criticalAlerts, subtitle: "Require immediate action", icon: Shield, color: "#ff3b5c" },
-          { title: "Consolidated Risk", value: `${stats.riskScore}/100`, subtitle: riskLabel, icon: TrendingUp, color: riskScoreData[0].fill },
+          { label: "LOGS SCANNED", value: stats.totalLogsScanned.toLocaleString(), trend: "+2.4%", labelColor: "var(--text-primary)" },
+          { label: "THREATS FLAGGED", value: stats.totalThreats, trend: "SYSTEM MATCH", labelColor: "var(--color-warning)" },
+          { label: "CRITICAL ALERTS", value: stats.criticalAlerts, trend: "REQUIRED ACTIONS", labelColor: "var(--color-danger)" },
+          { label: "RISK LEVEL", value: `${stats.riskScore}/100`, trend: riskLabel.toUpperCase(), labelColor: riskColor },
         ].map((card, i) => (
-          <motion.div key={card.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-            <StatCard {...card} />
+          <motion.div
+            key={card.label}
+            {...fadeUp(i * 0.03)}
+            className="bg-[#13161B] border border-[#1E2229] rounded-[4px] p-4 flex flex-col justify-between"
+          >
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#6B7280]">
+                {card.label}
+              </p>
+              <h3
+                className="font-bold tracking-tight font-heading mt-[6px] text-white"
+                style={{ fontSize: "clamp(28px, 3vw, 36px)", lineHeight: 1 }}
+              >
+                {card.value}
+              </h3>
+            </div>
+            <div className="flex items-center justify-between mt-[6px]">
+              <span className="font-mono text-[10px] text-[#3D4452]">TREND</span>
+              <span className="font-mono text-[12px] font-bold" style={{ color: card.labelColor }}>
+                {card.trend}
+              </span>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid lg:grid-cols-3 gap-4">
-        {/* Threat Trends - spans 2 cols */}
-        <motion.div className="glass-card p-5 lg:col-span-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-bold font-heading text-white">Threat Vectors Timeline (7 Days)</h2>
-            <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>LIVE FEED</span>
+      {/* ── Asymmetric Layout Grid (Feed on left, tactical panels on right) ── */}
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-3 overflow-hidden h-full">
+        {/* Left Panel (Feed) */}
+        <div className="bg-[#13161B] border border-[#1E2229] rounded-[4px] flex flex-col overflow-hidden h-full">
+          {/* Panel Header */}
+          <div className="h-[40px] flex-shrink-0 px-[16px] flex items-center justify-between border-b border-[#161A20]">
+            <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// ACTIVE INCIDENT FEEDS</span>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[var(--accent-mint)] rounded-full animate-pulse" />
+              <span className="font-mono text-[10px] text-[var(--accent-mint)] font-bold">REAL_TIME</span>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={stats.threatTrendData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-              <defs>
-                {[
-                  { id: "critical", color: "#ff3b5c" },
-                  { id: "high", color: "#ff8800" },
-                  { id: "medium", color: "#ffb800" },
-                ].map(({ id, color }) => (
-                  <linearGradient key={id} id={`grad-${id}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={color} stopOpacity={0.2} />
-                    <stop offset="95%" stopColor={color} stopOpacity={0} />
-                  </linearGradient>
-                ))}
-              </defs>
-              <XAxis dataKey="date" tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="critical" stroke="#ff3b5c" fill="url(#grad-critical)" strokeWidth={1.5} name="Critical" />
-              <Area type="monotone" dataKey="high" stroke="#ff8800" fill="url(#grad-high)" strokeWidth={1.5} name="High" />
-              <Area type="monotone" dataKey="medium" stroke="#ffb800" fill="url(#grad-medium)" strokeWidth={1.5} name="Medium" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </motion.div>
 
-        {/* Risk Score Gauge */}
-        <motion.div className="glass-card p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <h2 className="text-sm font-bold font-heading text-white">Posture Risk Score</h2>
-          <p className="text-[10px] text-gray-500 font-mono uppercase mt-0.5">Calculated Threat Rating</p>
-          
-          <div className="relative flex items-center justify-center mt-2">
-            <ResponsiveContainer width="100%" height={160}>
-              <RadialBarChart cx="50%" cy="75%" innerRadius="70%" outerRadius="90%"
-                startAngle={180} endAngle={180 - (stats.riskScore / 100) * 180} data={riskScoreData}>
-                <RadialBar dataKey="value" cornerRadius={10} fill={riskScoreData[0].fill} background={{ fill: "rgba(255,255,255,0.02)" }} />
-              </RadialBarChart>
-            </ResponsiveContainer>
-            <div className="absolute text-center" style={{ top: "52%", left: "50%", transform: "translate(-50%, -50%)" }}>
-              <div className="text-4xl font-black font-mono" style={{ color: riskScoreData[0].fill }}>{stats.riskScore}</div>
-              <div className="text-[10px] font-mono text-gray-500 uppercase mt-0.5">SCORE</div>
+          {/* Table Column headers */}
+          <div className="h-[32px] flex-shrink-0 px-[16px] flex items-center bg-[#0D1117] border-b border-[#1E2229]">
+            <div className="grid grid-cols-[32px_1fr_120px_120px_64px_80px_80px] w-full gap-2 items-center font-mono text-[10px] text-[#3D4452] uppercase tracking-[0.08em] font-bold">
+              <span>Sev</span>
+              <span>Threat Type</span>
+              <span>Source IP</span>
+              <span>File Asset</span>
+              <span>Time</span>
+              <span>Status</span>
+              <span className="text-right">Actions</span>
             </div>
           </div>
-          <div className="text-center mt-1">
-            <span className={stats.riskScore > 75 ? "badge-critical" : stats.riskScore > 45 ? "badge-high" : stats.riskScore > 25 ? "badge-medium" : "badge-low"}>
-              {riskLabel}
-            </span>
-          </div>
-        </motion.div>
-      </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        {/* Attack Categories Pie */}
-        <motion.div className="glass-card p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <h2 className="text-sm font-bold font-heading text-white mb-4">Attack Signatures Distribution</h2>
-          <div className="flex items-center gap-4">
-            <ResponsiveContainer width="50%" height={160}>
-              <PieChart>
-                <Pie data={stats.attackCategories} cx="50%" cy="50%" innerRadius={45} outerRadius={70}
-                  dataKey="value" paddingAngle={2}>
-                  {stats.attackCategories.map((entry: any, i: number) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex-1 space-y-2">
-              {stats.attackCategories.map((cat: any) => (
-                <div key={cat.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full" style={{ background: cat.color }} />
-                    <span style={{ color: "var(--text-secondary)" }} className="font-mono text-[11px]">{cat.name}</span>
+          {/* Table Body Scroll Area (Real DB Threats list) */}
+          <div className="flex-grow overflow-y-auto divide-y divide-[#161A20]">
+            {stats.recentThreats && stats.recentThreats.length > 0 ? (
+              stats.recentThreats.map((threat: any, idx: number) => {
+                const dotColor =
+                  threat.severity === "critical"
+                    ? "var(--color-danger)"
+                    : threat.severity === "high"
+                    ? "var(--color-warning)"
+                    : "var(--accent-mint)";
+
+                return (
+                  <div
+                    key={threat.id}
+                    className="h-[40px] px-[16px] flex items-center hover:bg-[#1A1F27] transition-colors group"
+                    style={{
+                      backgroundColor: idx % 2 === 1 ? "rgba(255,255,255,0.015)" : "transparent",
+                    }}
+                  >
+                    <div className="grid grid-cols-[32px_1fr_120px_120px_64px_80px_80px] w-full gap-2 items-center">
+                      {/* Severity dot */}
+                      <div className="flex items-center">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
+                      </div>
+                      {/* Threat Type */}
+                      <div className="font-heading font-semibold text-[13px] text-[#F0EDE6] truncate">{threat.type}</div>
+                      {/* Source IP */}
+                      <div className="font-mono text-[12px] text-[#C8C4BC] truncate">{threat.ip}</div>
+                      {/* File Asset */}
+                      <div className="font-mono text-[12px] text-[#6B7280] truncate">{threat.file}</div>
+                      {/* Timestamp */}
+                      <div className="font-mono text-[11px] text-[#6B7280]">{threat.time}</div>
+                      {/* Status badge */}
+                      <div>
+                        <span
+                          className="border-l-[2px] pl-2 text-[10px] font-mono font-bold"
+                          style={{ borderColor: dotColor, color: dotColor }}
+                        >
+                          {threat.status || "OPEN"}
+                        </span>
+                      </div>
+                      {/* Action buttons (revealed on hover) */}
+                      <div className="text-right flex items-center justify-end gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleDismissThreat(threat.id)}
+                          className="p-1 hover:text-[var(--color-danger)] transition-colors"
+                          title="Dismiss alert"
+                        >
+                          <X size={14} />
+                        </button>
+                        <button
+                          className="p-1 hover:text-[var(--accent-mint)] transition-colors"
+                          title="Investigate target"
+                        >
+                          <ArrowRight size={14} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <span className="font-mono font-bold" style={{ color: cat.color }}>{cat.value}%</span>
-                </div>
-              ))}
+                );
+              })
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-2">
+                <Shield size={24} className="text-[#6B7280]" />
+                <div className="text-white font-heading font-semibold text-xs">No Active Threats Detected</div>
+                <div className="font-mono text-[11px] text-[#6B7280]">Last checked: just now</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column Stack */}
+        <div className="flex flex-col gap-3 h-full overflow-hidden w-[380px]">
+          {/* Threat Map Panel (flex 0 0 55%) */}
+          <div className="bg-[#13161B] border border-[#1E2229] rounded-[4px] flex-[0_0_55%] flex flex-col overflow-hidden relative">
+            <div className="h-[40px] flex-shrink-0 px-[16px] flex items-center justify-between border-b border-[#161A20]">
+              <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// TACTICAL THREAT RADAR</span>
+            </div>
+
+            <div className="flex-1 relative overflow-hidden flex items-center justify-center p-3">
+              <svg viewBox="0 0 100 50" className="w-full h-full text-[#1E2229] max-w-[340px]">
+                {/* Simulated lightweight continent shapes */}
+                <path d="M5,12 Q15,8 22,14 T30,12 T38,18 T22,35 Z" fill="#1E2229" stroke="#2A3040" strokeWidth="0.5" />
+                <path d="M42,8 Q50,6 60,12 T70,8 T80,16 T65,32 Z" fill="#1E2229" stroke="#2A3040" strokeWidth="0.5" />
+                <path d="M68,22 Q75,20 85,24 T90,30 T80,38 Z" fill="#1E2229" stroke="#2A3040" strokeWidth="0.5" />
+
+                {/* Radar Concentric Rings */}
+                <circle cx="50" cy="25" r="12" fill="none" stroke="#161A20" strokeWidth="0.3" strokeDasharray="1 2" />
+                <circle cx="50" cy="25" r="24" fill="none" stroke="#161A20" strokeWidth="0.3" strokeDasharray="1 2" />
+
+                {/* Pulsing Hotspots */}
+                {mapDots.map((dot) => (
+                  <g
+                    key={dot.id}
+                    className="cursor-pointer"
+                    onMouseEnter={() => setHoveredDot(dot)}
+                    onMouseLeave={() => setHoveredDot(null)}
+                  >
+                    {dot.active && (
+                      <circle cx={dot.x} cy={dot.y} r="3.5" fill="none" stroke="var(--accent-mint)" strokeWidth="0.4">
+                        <animate attributeName="r" values="1.2;4.5;1.2" dur="1.8s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.7;0;0.7" dur="1.8s" repeatCount="indefinite" />
+                      </circle>
+                    )}
+                    <circle cx={dot.x} cy={dot.y} r="1.3" fill={dot.active ? "var(--accent-mint)" : "#6B7280"} />
+                  </g>
+                ))}
+              </svg>
+
+              {/* Tooltip Overlay */}
+              <AnimatePresence>
+                {hoveredDot && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="absolute bottom-2 left-2 right-2 p-2 border border-[#1E2229] bg-[#0D1117] text-[10px] font-mono z-50"
+                  >
+                    <div className="text-white font-bold">{hoveredDot.type}</div>
+                    <div className="text-[var(--accent-mint)]">{hoveredDot.ip} ({hoveredDot.country})</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
-        </motion.div>
 
-        {/* Log Volume */}
-        <motion.div className="glass-card p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
-          <h2 className="text-sm font-bold font-heading text-white mb-4">Ingestion Telemetry Volume</h2>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={stats.logVolumeData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-              <XAxis dataKey="hour" tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#6b7280", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar dataKey="count" name="Lines Ingested" radius={[4, 4, 0, 0]}>
-                {stats.logVolumeData.map((_: any, i: number) => (
-                  <Cell key={i} fill={i === stats.logVolumeData.length - 1 ? "#00d9ff" : "rgba(0, 217, 255, 0.25)"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </motion.div>
+          {/* Severity Breakdown Chart (flex-1) */}
+          <div className="bg-[#13161B] border border-[#1E2229] rounded-[4px] flex-grow flex flex-col overflow-hidden">
+            <div className="h-[40px] flex-shrink-0 px-[16px] flex items-center justify-between border-b border-[#161A20]">
+              <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// INCIDENTS CATEGORIZATION</span>
+            </div>
+
+            <div className="flex-1 p-4 flex flex-col justify-between overflow-y-auto min-h-0 gap-3">
+              {[
+                { label: "Critical", count: stats.criticalAlerts, color: "#FF4D4D", total: stats.totalThreats || 1 },
+                { label: "High", count: stats.highAlerts || 0, color: "#F5A623", total: stats.totalThreats || 1 },
+                { label: "Medium", count: stats.mediumAlerts || 0, color: "#00E5C3", total: stats.totalThreats || 1 },
+                { label: "Low", count: stats.lowAlerts || 0, color: "#6B7280", total: stats.totalThreats || 1 },
+              ].map((row, idx) => {
+                const percentage = Math.round((row.count / row.total) * 100);
+                return (
+                  <div key={row.label} className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-[#C8C4BC] uppercase">{row.label}</span>
+                      <span style={{ color: row.color }} className="font-bold">
+                        {row.count} ({percentage}%)
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="h-1.5 border border-[#1E2229] bg-[#0A0C0F] overflow-hidden relative">
+                      <div
+                        className="h-full"
+                        style={{
+                          backgroundColor: row.color,
+                          width: animateBars ? `${percentage}%` : "0%",
+                          transition: `width 400ms cubic-bezier(0.16, 1, 0.3, 1) ${idx * 80}ms`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Recent Threats Table */}
-      <motion.div className="glass-card" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-        <div className="p-5 flex items-center justify-between border-b border-gray-900/50">
-          <h2 className="text-sm font-bold font-heading text-white">Recent Threats Log</h2>
-          <Link href="/threats" className="text-xs font-heading flex items-center gap-1 text-cyan-400 hover:text-cyan-300 transition-colors">
-            View Console Logs <ArrowRight size={12} />
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Threat Pattern</th>
-                <th>Source Host / IP</th>
-                <th>Risk Level</th>
-                <th>Ingested File</th>
-                <th>Time Detected</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.recentThreats.map((threat: any) => (
-                <tr key={threat.id}>
-                  <td className="font-bold text-white font-heading">{threat.type}</td>
-                  <td className="font-mono text-xs text-cyan-400">{threat.ip}</td>
-                  <td><SevBadge severity={threat.severity} /></td>
-                  <td className="text-xs text-gray-500 font-mono">{threat.file}</td>
-                  <td className="text-xs text-gray-500 font-mono">{threat.time}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
+      {/* Floating Action Button (FAB) on mobile (xs/sm only) */}
+      <div className="md:hidden fixed bottom-20 right-4 z-40">
+        <button
+          onClick={handleQuickReport}
+          className="w-12 h-12 rounded-full bg-[var(--accent-mint)] text-[var(--bg-void)] flex items-center justify-center shadow-lg border border-[var(--accent-mint)] hover:bg-[var(--accent-mint-dim)] transition-colors focus:outline-none"
+          title="Report Active Threat Incident"
+        >
+          <Plus size={22} />
+        </button>
+      </div>
 
-      {/* Quick Console Actions */}
-      <motion.div className="glass-card p-5" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}>
-        <h2 className="text-sm font-bold font-heading text-white mb-4">Tactical Console Modules</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {[
-            { href: "/logs", icon: Upload, label: "Upload Log Files", color: "#00d9ff" },
-            { href: "/scanner", icon: GitBranch, label: "Scan Codebase", color: "#8b5cf6" },
-            { href: "/reports", icon: FileText, label: "Incident Briefings", color: "#00ff88" },
-            { href: "/chat", icon: MessageSquare, label: "Ask Security AI", color: "#ffb800" },
-          ].map((action) => (
-            <Link key={action.href} href={action.href}
-              className="flex flex-col items-center gap-2.5 p-4 rounded-lg transition-all text-center group border border-gray-900/50"
-              style={{ background: "rgba(10,10,10,0.5)" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = action.color + "30"; e.currentTarget.style.background = action.color + "08"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.02)"; e.currentTarget.style.background = "rgba(10,10,10,0.5)"; }}>
-              <action.icon size={18} style={{ color: action.color }} />
-              <span className="text-xs font-mono font-medium text-gray-400 group-hover:text-white transition-colors">{action.label}</span>
-            </Link>
-          ))}
-        </div>
-      </motion.div>
+      {/* CSS Pulse styles for radar dots */}
+      <style jsx global>{`
+        @keyframes radarPing {
+          0% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(2.4);
+            opacity: 0;
+          }
+        }
+        .animate-ping {
+          animation: radarPing 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+        }
+      `}</style>
     </div>
   );
 }

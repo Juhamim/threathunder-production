@@ -209,10 +209,18 @@ src/
 
 ---
 
+## 👥 Developer & Repository Info
+
+This project is developed and maintained by **Juhamim** (juhaimmtm@gmail.com).
+
+- **Official Git Repository:** [Juhamim/threathunder-production](https://github.com/Juhamim/threathunder-production.git)
+- **Developer Profile:** [@Juhamim](https://github.com/Juhamim)
+
 ## 📄 License
 
-MIT © 2025 ThreatHunter AI
+MIT © 2026 ThreatHunter AI - Developed by Juhamim.
 
 ---
 
-*Built for the security community. Not a substitute for professional security assessment.*
+*Built for the security community by Juhamim. Not a substitute for professional security assessment.*
+

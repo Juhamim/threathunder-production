@@ -79,7 +79,8 @@ export async function POST(req: NextRequest) {
   }
 
   const [, owner, repo] = match;
-  const token = githubToken || process.env.GITHUB_TOKEN;
+  const rawToken = githubToken || process.env.GITHUB_TOKEN;
+  const token = (rawToken && rawToken !== "ghp_your-github-personal-access-token" && rawToken !== "ghp_your_token") ? rawToken : undefined;
 
   try {
     const files = await fetchGitHubTree(owner, repo, token);

@@ -39,7 +39,7 @@ const SEVERITY_ICONS = {
 };
 
 const EXAMPLE_REPOS = [
-  "https://github.com/torvalds/linux",
+  "https://github.com/Juhamim/threathunder-production",
   "https://github.com/expressjs/express",
   "https://github.com/django/django",
 ];
@@ -90,7 +90,7 @@ export default function ScannerPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full max-w-[1500px] mx-auto space-y-6">
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>GitHub Security Scanner</h1>
@@ -246,7 +246,7 @@ export default function ScannerPage() {
 
             {/* Stats */}
             {result.findings.length > 0 && (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   { label: "Critical", count: result.stats.critical, color: "#ef4444" },
                   { label: "High", count: result.stats.high, color: "#f97316" },

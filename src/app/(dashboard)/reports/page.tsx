@@ -41,7 +41,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full max-w-[1500px] mx-auto space-y-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="text-2xl font-bold" style={{ color: "var(--text-primary)" }}>Incident Reports</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>

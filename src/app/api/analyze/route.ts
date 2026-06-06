@@ -59,19 +59,23 @@ export async function POST(req: NextRequest) {
     const logType = detectLogType(content);
     const parsedEntries = parseLogContent(content, logType);
 
+    // Helper: strip null bytes (0x00) — PostgreSQL rejects them in UTF-8 columns
+    const sanitizeStr = (s: string | null | undefined): string | null =>
+      s ? s.replace(/\0/g, "") : null;
+
     // Store log entries (batch insert, limit 5000)
     const entriesToInsert = parsedEntries.slice(0, 5000).map(entry => ({
       uploadId: upload.id,
       lineNumber: entry.lineNumber,
       timestamp: entry.timestamp,
-      ip: entry.ip,
-      method: entry.method,
-      path: entry.path,
+      ip: sanitizeStr(entry.ip),
+      method: sanitizeStr(entry.method),
+      path: sanitizeStr(entry.path),
       statusCode: entry.statusCode,
       responseSize: entry.responseSize,
-      userAgent: entry.userAgent,
-      username: entry.username,
-      raw: entry.raw.slice(0, 1000), // truncate very long lines
+      userAgent: sanitizeStr(entry.userAgent),
+      username: sanitizeStr(entry.username),
+      raw: sanitizeStr(entry.raw.slice(0, 1000)) || "", // truncate very long lines
     }));
 
     if (entriesToInsert.length > 0) {

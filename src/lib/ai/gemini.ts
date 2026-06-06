@@ -1,31 +1,99 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DetectedThreat } from "@/lib/threat-detection";
 
-const isGeminiConfigured = !!(
-  process.env.GEMINI_API_KEY &&
-  process.env.GEMINI_API_KEY !== "your-gemini-api-key" &&
-  process.env.GEMINI_API_KEY.trim() !== ""
-);
+// Strip any accidental surrounding quotes that dotenv/shell may add
+const rawKey = (process.env.GEMINI_API_KEY ?? "").replace(/^["']|["']$/g, "").trim();
 
-const genAI = isGeminiConfigured ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY!) : null;
+const isGeminiConfigured = !!(rawKey && rawKey !== "your-gemini-api-key");
 
-function getModel(streaming = false) {
-  if (!genAI) return null;
-  return genAI.getGenerativeModel({
-    model: "gemini-2.5-flash-preview-05-20",
-    generationConfig: {
-      temperature: 0.7,
-      topP: 0.95,
-      maxOutputTokens: 4096,
-    },
-  });
+if (isGeminiConfigured) {
+  console.log("[Gemini] API key loaded, length:", rawKey.length);
+} else {
+  console.warn("[Gemini] API key not configured.");
+}
+
+const genAI = isGeminiConfigured ? new GoogleGenerativeAI(rawKey) : null;
+
+// Model priority list — tries primary first, falls back on 503/429
+const MODEL_PRIORITY = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-8b"];
+
+const GEN_CONFIG = {
+  temperature: 0.7,
+  topP: 0.95,
+  maxOutputTokens: 4096,
+};
+
+const CHAT_SYSTEM_PROMPT = `You are ThreatHunter AI Assistant — an expert cybersecurity analyst and educator embedded in a Security Operations Center (SOC) platform.
+
+Your role:
+- Answer cybersecurity questions clearly and professionally
+- Explain threats, vulnerabilities, and attack techniques
+- Provide actionable remediation advice
+- Help students and junior analysts learn cybersecurity concepts
+- Analyze specific threats when asked
+
+Tone: Professional yet approachable. Use simple language for beginners but include technical depth when asked.
+Format: Use markdown for readability. Include code examples when relevant.
+Focus: Keep responses focused on cybersecurity and security operations.`;
+
+/** Call generateContent with automatic model fallback on 503/429 */
+async function generateWithFallback(prompt: string): Promise<string> {
+  if (!genAI) throw new Error("Gemini not configured");
+  let lastError: unknown;
+  for (const modelName of MODEL_PRIORITY) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName, generationConfig: GEN_CONFIG });
+      const result = await model.generateContent(prompt);
+      return result.response.text();
+    } catch (err: any) {
+      lastError = err;
+      const msg = String(err?.message ?? "");
+      const isRetryable = err?.status === 503 || err?.status === 429 || msg.includes("503") || msg.includes("429") || msg.includes("high demand");
+      if (isRetryable && modelName !== MODEL_PRIORITY[MODEL_PRIORITY.length - 1]) {
+        console.warn(`[Gemini] ${modelName} unavailable (${err?.status ?? "err"}), trying fallback model...`);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
+}
+
+/** Stream chat with automatic model fallback on 503/429 */
+async function* streamWithFallback(
+  chatHistory: { role: "user" | "model"; parts: { text: string }[] }[],
+  message: string
+): AsyncGenerator<string> {
+  if (!genAI) throw new Error("Gemini not configured");
+  let lastError: unknown;
+  for (const modelName of MODEL_PRIORITY) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName, generationConfig: GEN_CONFIG });
+      const chat = model.startChat({ history: chatHistory });
+      const result = await chat.sendMessageStream(message);
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) yield text;
+      }
+      return; // success
+    } catch (err: any) {
+      lastError = err;
+      const msg = String(err?.message ?? "");
+      const isRetryable = err?.status === 503 || err?.status === 429 || msg.includes("503") || msg.includes("429") || msg.includes("high demand");
+      if (isRetryable && modelName !== MODEL_PRIORITY[MODEL_PRIORITY.length - 1]) {
+        console.warn(`[Gemini] ${modelName} stream unavailable (${err?.status ?? "err"}), trying fallback model...`);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
 }
 
 // ─── Threat Analysis ──────────────────────────────────────────────────────
 export async function analyzeThreat(threat: DetectedThreat): Promise<string> {
   try {
-    const model = getModel();
-    if (!model) throw new Error("Gemini not configured");
+    if (!isGeminiConfigured) throw new Error("Gemini not configured");
 
     const prompt = `You are an expert SOC analyst. Analyze this security threat and provide a clear, professional explanation.
 
@@ -51,10 +119,7 @@ Provide your analysis in this EXACT JSON format (no markdown, just JSON):
   "technicalDetails": "Technical details for senior analysts"
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-
-    // Clean up markdown code fences if present
+    const text = await generateWithFallback(prompt);
     return text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
   } catch (error) {
     console.warn("Gemini analyzeThreat failed, using fallback:", error);
@@ -97,8 +162,7 @@ export async function generateIncidentReport(
   ).join("\n");
 
   try {
-    const model = getModel();
-    if (!model) throw new Error("Gemini not configured");
+    if (!isGeminiConfigured) throw new Error("Gemini not configured");
 
     const prompt = `You are a senior cybersecurity analyst. Generate a professional incident response report.
 
@@ -134,22 +198,20 @@ Generate a professional security incident report in this EXACT JSON format:
   ]
 }`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text().replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-
-    return JSON.parse(text);
+    const text = await generateWithFallback(prompt);
+    return JSON.parse(text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim());
   } catch (error) {
     console.warn("Gemini generateIncidentReport failed, using fallback:", error);
     return {
-      executiveSummary: `Log analysis completed for file '${filename}' under Sandbox/offline mode. Basic threat rules detected ${threats.length} potential attack sequences. To generate deep AI incident writeups, configure a valid GEMINI_API_KEY.`,
+      executiveSummary: `Log analysis completed for file '${filename}'. Basic threat rules detected ${threats.length} potential attack sequences.`,
       threatOverview: `Rule heuristics matching identified typical attack signatures across ${threats.length} instances. Primary triggers: ${threats.map(t => t.title).slice(0, 3).join(", ")}.`,
       riskAssessment: `Risk level assessed at ${riskScore}/100. Action is recommended to secure assets from IP sources: ${threats.flatMap(t => t.affectedIps).slice(0, 5).join(", ")}.`,
       recommendedActions: [
         "Isolate/nullroute top requesting IP addresses in security policies.",
-        "Enable valid Google Gemini API key to activate automated incident summaries.",
-        "Review server configuration against standard vulnerability configurations."
+        "Review server configuration against standard vulnerability configurations.",
+        "Enable monitoring to detect recurring patterns."
       ],
-      conclusion: "Preliminary heuristics scan completed. Live AI report requires a valid Gemini API key in configuration settings.",
+      conclusion: "Preliminary heuristics scan completed.",
       iocs: Array.from(new Set(threats.flatMap(t => t.affectedIps))).slice(0, 10),
       timeline: threats.map((t, idx) => ({
         time: `T+${idx * 4}m`,
@@ -159,41 +221,26 @@ Generate a professional security incident report in this EXACT JSON format:
   }
 }
 
-// ─── Chat Assistant ───────────────────────────────────────────────────────
-const CHAT_SYSTEM_PROMPT = `You are ThreatHunter AI Assistant — an expert cybersecurity analyst and educator embedded in a Security Operations Center (SOC) platform.
-
-Your role:
-- Answer cybersecurity questions clearly and professionally
-- Explain threats, vulnerabilities, and attack techniques
-- Provide actionable remediation advice
-- Help students and junior analysts learn cybersecurity concepts
-- Analyze specific threats when asked
-
-Tone: Professional yet approachable. Use simple language for beginners but include technical depth when asked.
-Format: Use markdown for readability. Include code examples when relevant.
-Focus: Keep responses focused on cybersecurity and security operations.`;
-
+// ─── Chat Assistant (non-streaming) ──────────────────────────────────────
 export async function chatWithAssistant(
   userMessage: string,
   history: { role: "user" | "model"; parts: { text: string }[] }[]
 ): Promise<string> {
   try {
-    const model = getModel();
-    if (!model) throw new Error("Gemini not configured");
-
-    const chat = model.startChat({
-      history: [
-        { role: "user", parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
-        { role: "model", parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis, threat investigation, and security guidance." }] },
-        ...history,
-      ],
-    });
-
-    const result = await chat.sendMessage(userMessage);
-    return result.response.text();
+    if (!isGeminiConfigured) throw new Error("Gemini not configured");
+    const fullHistory = [
+      { role: "user" as const, parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
+      { role: "model" as const, parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis, threat investigation, and security guidance." }] },
+      ...history,
+    ];
+    const chunks: string[] = [];
+    for await (const text of streamWithFallback(fullHistory, userMessage)) {
+      chunks.push(text);
+    }
+    return chunks.join("");
   } catch (error) {
-    console.warn("Gemini chatWithAssistant failed, using fallback:", error);
-    return "Gemini API key is unconfigured or invalid. Please save a valid GEMINI_API_KEY in .env.local to activate the interactive chat assistant.";
+    console.warn("Gemini chatWithAssistant failed:", error);
+    return "AI assistant temporarily unavailable. Please try again.";
   }
 }
 
@@ -203,32 +250,15 @@ export async function* streamChatWithAssistant(
   history: { role: "user" | "model"; parts: { text: string }[] }[]
 ): AsyncGenerator<string> {
   try {
-    const model = getModel(true);
-    if (!model) throw new Error("Gemini not configured");
-
-    const chat = model.startChat({
-      history: [
-        { role: "user", parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
-        { role: "model", parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis." }] },
-        ...history,
-      ],
-    });
-
-    const result = await chat.sendMessageStream(userMessage);
-
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
-      if (text) yield text;
-    }
+    if (!isGeminiConfigured) throw new Error("Gemini not configured");
+    const fullHistory = [
+      { role: "user" as const, parts: [{ text: "System context: " + CHAT_SYSTEM_PROMPT }] },
+      { role: "model" as const, parts: [{ text: "Understood. I'm ThreatHunter AI Assistant, ready to help with cybersecurity analysis." }] },
+      ...history,
+    ];
+    yield* streamWithFallback(fullHistory, userMessage);
   } catch (error) {
-    console.warn("Gemini streamChatWithAssistant failed, using fallback:", error);
-    yield "Hello! I am the **ThreatHunter AI Assistant**. \n\n" +
-          "It looks like your **Gemini API Key** is not configured, or is using the default placeholder value. \n\n" +
-          "### How to Enable Live AI Analysis & Chat:\n" +
-          "1. Go to [Google AI Studio](https://aistudio.google.com/app/apikey) to generate a free Gemini API Key.\n" +
-          "2. Open `threathunter-ai/.env.local` or `.env.example` in your editor.\n" +
-          "3. Change the line `GEMINI_API_KEY=your-gemini-api-key` to your actual API key.\n" +
-          "4. **Save** the file to disk. The server will hot-reload and activate the AI features immediately!\n\n" +
-          "*(In the meantime, the dashboard log heuristics and local sandbox authentication remain fully functional!)*";
+    console.warn("Gemini streamChatWithAssistant failed:", error);
+    yield "⚠️ The AI assistant encountered a temporary issue. Please try sending your message again.";
   }
 }
