@@ -408,7 +408,7 @@ export default function LandingPage() {
 
             <p className="leading-relaxed max-w-[540px] mx-auto lg:mx-0" style={{ color: "#94A3B8", fontSize: "16px" }}>
               ThreatHunter is built in the open by developer{" "}
-              <span className="text-white font-bold">Juhamim</span>. Inspect the code, contribute
+              <span className="text-white font-bold">Juhaim Mohammed</span>. Inspect the code, contribute
               improvements, deploy your own instance, or self-host without vendor lock-in. No
               trackers, no telemetry leaving your network, and complete control over your keys.
             </p>
@@ -435,12 +435,12 @@ export default function LandingPage() {
             >
               <div className="flex items-center justify-between font-mono text-[10px] text-[#64748B]">
                 <span>MIT CODEBASE</span>
-                <span className="text-[#00E5A8] font-bold">Juhamim/threathunder-production</span>
+                <span className="text-[#00E5A8] font-bold">juhaimmohammed/threathunder-production</span>
               </div>
 
               <div className="border-y border-white/5 py-4 flex flex-col gap-2.5 font-mono text-xs text-[#94A3B8]">
                 {[
-                  ["Developer",       "Juhamim"],
+                  ["Developer",       "Juhaim Mohammed"],
                   ["Contact Email",   "juhaimmtm@gmail.com"],
                   ["License",         "MIT Open Source"],
                   ["Dependencies",    "Next.js 15 / Tailwind CSS"],
@@ -560,7 +560,7 @@ export default function LandingPage() {
               {
                 title: "Developer",
                 links: [
-                  { label: "Juhamim", href: "https://github.com/Juhamim", external: true },
+                  { label: "Juhaim Mohammed", href: "https://github.com/Juhamim", external: true },
                   { label: "juhaimmtm@gmail.com", href: "mailto:juhaimmtm@gmail.com" },
                 ],
               },
@@ -607,12 +607,12 @@ export default function LandingPage() {
                   rel="noopener noreferrer"
                   className="text-[#00E5A8] hover:underline"
                 >
-                  Juhamim
+                  Juhaim Mohammed
                 </a>
               </span>
             </div>
             <p className="font-mono text-[11px] text-[#64748B]">
-              © 2026 ThreatHunter — Open-source SOC platform by Juhamim (juhaimmtm@gmail.com).
+              © 2026 ThreatHunter — Open-source SOC platform by Juhaim Mohammed (juhaimmtm@gmail.com).
             </p>
           </div>
         </div>
