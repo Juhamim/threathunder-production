@@ -14,8 +14,8 @@ if (isGeminiConfigured) {
 
 const genAI = isGeminiConfigured ? new GoogleGenerativeAI(rawKey) : null;
 
-// Model priority list — tries primary first, falls back on 503/429
-const MODEL_PRIORITY = ["gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-8b"];
+// Model priority list — confirmed working models (tested against your API key)
+const MODEL_PRIORITY = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"];
 
 const GEN_CONFIG = {
   temperature: 0.7,
@@ -36,7 +36,7 @@ Tone: Professional yet approachable. Use simple language for beginners but inclu
 Format: Use markdown for readability. Include code examples when relevant.
 Focus: Keep responses focused on cybersecurity and security operations.`;
 
-/** Call generateContent with automatic model fallback on 503/429 */
+/** Call generateContent with automatic model fallback on 503/429/404 */
 async function generateWithFallback(prompt: string): Promise<string> {
   if (!genAI) throw new Error("Gemini not configured");
   let lastError: unknown;
@@ -48,9 +48,14 @@ async function generateWithFallback(prompt: string): Promise<string> {
     } catch (err: any) {
       lastError = err;
       const msg = String(err?.message ?? "");
-      const isRetryable = err?.status === 503 || err?.status === 429 || msg.includes("503") || msg.includes("429") || msg.includes("high demand");
-      if (isRetryable && modelName !== MODEL_PRIORITY[MODEL_PRIORITY.length - 1]) {
-        console.warn(`[Gemini] ${modelName} unavailable (${err?.status ?? "err"}), trying fallback model...`);
+      const is429 = err?.status === 429 || msg.includes("429") || msg.includes("quota");
+      const is503 = err?.status === 503 || msg.includes("503") || msg.includes("high demand");
+      const is404 = err?.status === 404 || msg.includes("404");
+      const isRetryable = is429 || is503 || is404;
+      const isLastModel = modelName === MODEL_PRIORITY[MODEL_PRIORITY.length - 1];
+      if (isRetryable && !isLastModel) {
+        console.warn(`[Gemini] ${modelName} unavailable (${err?.status ?? "err"}), trying next model...`);
+        if (is429) await new Promise(r => setTimeout(r, 2000));
         continue;
       }
       throw err;
@@ -59,7 +64,8 @@ async function generateWithFallback(prompt: string): Promise<string> {
   throw lastError;
 }
 
-/** Stream chat with automatic model fallback on 503/429 */
+
+/** Stream chat with automatic model fallback on 503/429/404 */
 async function* streamWithFallback(
   chatHistory: { role: "user" | "model"; parts: { text: string }[] }[],
   message: string
@@ -79,9 +85,14 @@ async function* streamWithFallback(
     } catch (err: any) {
       lastError = err;
       const msg = String(err?.message ?? "");
-      const isRetryable = err?.status === 503 || err?.status === 429 || msg.includes("503") || msg.includes("429") || msg.includes("high demand");
-      if (isRetryable && modelName !== MODEL_PRIORITY[MODEL_PRIORITY.length - 1]) {
-        console.warn(`[Gemini] ${modelName} stream unavailable (${err?.status ?? "err"}), trying fallback model...`);
+      const is429 = err?.status === 429 || msg.includes("429") || msg.includes("quota");
+      const is503 = err?.status === 503 || msg.includes("503") || msg.includes("high demand");
+      const is404 = err?.status === 404 || msg.includes("404");
+      const isRetryable = is429 || is503 || is404;
+      const isLastModel = modelName === MODEL_PRIORITY[MODEL_PRIORITY.length - 1];
+      if (isRetryable && !isLastModel) {
+        console.warn(`[Gemini] ${modelName} unavailable (${err?.status ?? "err"}), trying next model...`);
+        if (is429) await new Promise(r => setTimeout(r, 2000)); // brief pause on quota errors
         continue;
       }
       throw err;
@@ -257,8 +268,17 @@ export async function* streamChatWithAssistant(
       ...history,
     ];
     yield* streamWithFallback(fullHistory, userMessage);
-  } catch (error) {
-    console.warn("Gemini streamChatWithAssistant failed:", error);
-    yield "⚠️ The AI assistant encountered a temporary issue. Please try sending your message again.";
+  } catch (error: any) {
+    const msg = String(error?.message ?? error ?? "Unknown error");
+    console.error("[Gemini] streamChatWithAssistant failed:", msg, error);
+    if (!isGeminiConfigured) {
+      yield "⚠️ AI assistant is not configured. Please add a valid GEMINI_API_KEY in your .env.local file.";
+    } else if (msg.includes("API_KEY_INVALID") || msg.includes("400")) {
+      yield "⚠️ Invalid Gemini API key. Please get a valid key from https://aistudio.google.com/app/apikey and update your .env.local.";
+    } else if (msg.includes("429") || msg.includes("quota")) {
+      yield "⚠️ API quota limit reached. You've used your free tier allowance. Please wait a minute and try again, or upgrade your Google AI plan at https://ai.google.dev/pricing";
+    } else {
+      yield `⚠️ The AI assistant encountered a temporary issue. Please try again in a moment.`;
+    }
   }
 }
