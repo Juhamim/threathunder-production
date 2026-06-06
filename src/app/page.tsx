@@ -52,7 +52,7 @@ function PremiumSecurityVisual() {
   }, []);
 
   return (
-    <div className="relative w-full h-[540px] max-w-[620px] bg-[#111827]/60 backdrop-blur-xl border border-white/8 rounded-[6px] overflow-hidden flex flex-col p-5 font-mono select-none shadow-2xl z-10 mx-auto">
+    <div className="relative hero-visual-panel bg-[#111827]/60 backdrop-blur-xl border border-white/8 rounded-[6px] overflow-hidden flex flex-col p-5 font-mono select-none shadow-2xl z-10 mx-auto">
       {/* Visual Header */}
       <div className="flex items-center justify-between border-b border-white/8 pb-3 mb-4">
         <div className="flex items-center gap-2">
@@ -186,7 +186,7 @@ export default function RedesignedLandingPage() {
     <div className="landing-theme min-h-screen relative overflow-x-hidden selection:bg-[#00E5A8] selection:text-[#070B14]">
       {/* ── Floating Sticky Navigation Bar ────────────────────────────── */}
       <nav className="sticky top-0 left-0 right-0 z-50 h-[64px] bg-[#070B14]/70 backdrop-blur-md border-b border-white/8">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 h-full flex items-center justify-between">
+        <div className="container h-full flex items-center justify-between">
           <div className="flex items-center">
             <span className="font-heading font-extrabold text-white text-[20px] tracking-tight">
               THREAT<span className="text-[#00E5A8]">HUNTER</span>
@@ -227,7 +227,7 @@ export default function RedesignedLandingPage() {
       </nav>
 
       {/* ── Hero Section ──────────────────────────────────────────────── */}
-      <section className="relative min-h-[calc(100vh-64px)] w-full grid grid-cols-1 lg:grid-cols-2 pt-[64px] pb-[80px] overflow-hidden max-w-[1400px] mx-auto px-6 md:px-8 items-center gap-12 lg:gap-16">
+      <section className="container hero relative min-h-[calc(100vh-64px)] pt-[64px] pb-[80px] overflow-hidden">
         {/* Left Side Info Panel */}
         <div className="flex flex-col justify-center gap-[28px] max-w-[640px] w-full relative z-10 text-center lg:text-left mx-auto lg:mx-0">
           <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#00E5A8] font-bold">
@@ -292,14 +292,14 @@ export default function RedesignedLandingPage() {
         </div>
 
         {/* Right Side Cybersecurity Visual */}
-        <div className="w-full relative flex items-center justify-center">
+        <div className="hero-visual">
           <PremiumSecurityVisual />
         </div>
       </section>
 
       {/* ── Features Section ─────────────────────────────────────────── */}
       <section id="features" className="py-32 border-t border-white/5 bg-[#0D1321]/45">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8">
+        <div className="container">
           <div className="mb-20 text-center lg:text-left">
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
               // THREAT DETECTION CAPABILITIES
@@ -309,9 +309,9 @@ export default function RedesignedLandingPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="features-grid">
             {/* Card 1: AI Log Analysis */}
-            <div className="glass-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-card feature-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
               <div>
                 <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
                   <FileText size={22} className="text-[#00E5A8]" />
@@ -326,7 +326,7 @@ export default function RedesignedLandingPage() {
             </div>
 
             {/* Card 2: GitHub Secret Scanner */}
-            <div className="glass-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-card feature-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
               <div>
                 <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
                   <Key size={22} className="text-[#00E5A8]" />
@@ -341,7 +341,7 @@ export default function RedesignedLandingPage() {
             </div>
 
             {/* Card 3: Live Threat Dashboard */}
-            <div className="glass-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
+            <div className="glass-card feature-card bg-[#111827]/50 border border-white/8 p-8 rounded-[6px] hover:-translate-y-2 hover:border-[#00E5A8]/40 hover:shadow-[0_8px_30px_rgb(0,229,168,0.03)] transition-all duration-300 flex flex-col justify-between min-h-[340px]">
               <div>
                 <div className="w-12 h-12 rounded-[4px] flex items-center justify-center mb-6 bg-white/5 border border-white/10">
                   <Shield size={22} className="text-[#00E5A8]" />
@@ -360,7 +360,7 @@ export default function RedesignedLandingPage() {
 
       {/* ── How It Works Section ──────────────────────────────────────── */}
       <section id="demo" className="py-32 border-t border-white/5">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8">
+        <div className="container">
           <div className="mb-20 text-center">
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
               // ARCHITECTURAL PIPELINE
@@ -371,7 +371,7 @@ export default function RedesignedLandingPage() {
           </div>
 
           {/* Visual Workflow Steps */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative items-start">
+          <div className="workflow-grid relative items-start">
             {[
               {
                 step: "01",
@@ -398,7 +398,7 @@ export default function RedesignedLandingPage() {
                 icon: Activity,
               },
             ].map((node, i) => (
-              <div key={node.step} className="relative flex flex-col items-center text-center p-6 bg-[#111827]/40 border border-white/5 rounded-[6px] h-full justify-between">
+              <div key={node.step} className="relative workflow-card flex flex-col items-center text-center p-6 bg-[#111827]/40 border border-white/5 rounded-[6px] justify-between">
                 {/* Arrow connector */}
                 {i < 3 && (
                   <div className="hidden md:block absolute top-1/2 -translate-y-1/2 -right-[18px] z-20 text-[#00E5A8] opacity-30 animate-pulse">
@@ -425,9 +425,9 @@ export default function RedesignedLandingPage() {
 
       {/* ── Open Source Section ────────────────────────────────────────── */}
       <section className="py-32 border-t border-white/5 bg-[#0D1321]/45">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <div className="container opensource-grid">
           {/* Left Description Column */}
-          <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
+          <div className="space-y-5 text-center lg:text-left">
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#00E5A8] font-bold">
               // TRANSPARENT SECURITY
             </span>
@@ -455,8 +455,8 @@ export default function RedesignedLandingPage() {
           </div>
 
           {/* Right Repositories Actions widget */}
-          <div className="lg:col-span-5 flex justify-center w-full">
-            <div className="bg-[#111827]/60 backdrop-blur-xl border border-white/8 p-6 rounded-[6px] space-y-5 w-full max-w-sm text-left shadow-2xl">
+          <div className="w-full">
+            <div className="bg-[#111827]/60 backdrop-blur-xl border border-white/8 p-6 rounded-[6px] space-y-5 w-full repo-card text-left shadow-2xl">
               <div className="flex items-center justify-between font-mono text-[10px] text-[#64748B]">
                 <span>MIT CODEBASE</span>
                 <span className="text-[#00E5A8] font-bold">Juhamim/threathunder-production</span>
@@ -527,9 +527,9 @@ export default function RedesignedLandingPage() {
 
       {/* ── Footer ────────────────────────────────────────────────────── */}
       <footer className="border-t border-white/5 bg-[#070B14] text-[#94A3B8] py-20 relative z-10">
-        <div className="max-w-[1400px] mx-auto px-6 md:px-8 flex flex-col gap-16">
+        <div className="container flex flex-col gap-16">
           {/* Main Footer Links */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-left">
+          <div className="footer-links-grid text-left">
             <div>
               <span className="font-heading font-extrabold text-white text-[13px] tracking-wider uppercase block mb-4">
                 Product

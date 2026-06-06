@@ -451,3 +451,143 @@ p, span, div, li, a {
   border-color: rgba(0, 229, 168, 0.4);
   background-color: rgba(0, 229, 168, 0.05);
 }
+
+/* ─── Premium SaaS Layout Spacing & Grid System ───────────────────────── */
+.container {
+  width: min(1600px, 95vw);
+  margin-inline: auto;
+  padding-inline: 32px;
+}
+
+@media (min-width: 1800px) {
+  .container {
+    width: 92vw;
+    max-width: 1800px;
+  }
+}
+
+/* Hero Section layout classes */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    grid-template-columns: 1.05fr 1fr;
+    gap: 80px;
+  }
+}
+
+.hero-visual {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 1024px) {
+  .hero-visual {
+    height: 650px;
+  }
+}
+
+.hero-visual-panel {
+  width: 100%;
+  height: 540px;
+  max-width: 620px;
+}
+
+@media (min-width: 1024px) {
+  .hero-visual-panel {
+    height: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Feature Section layouts */
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 768px) and (max-width: 1279px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .features-grid {
+    grid-template-columns: repeat(3, minmax(420px, 1fr));
+  }
+}
+
+.feature-card {
+  width: 100%;
+  height: 100%;
+}
+
+/* How It Works layouts */
+.workflow-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .workflow-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .workflow-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+  }
+}
+
+.workflow-card {
+  min-height: 260px;
+  width: 100%;
+  height: 100%;
+}
+
+/* Open Source layouts */
+.opensource-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 48px;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .opensource-grid {
+    grid-template-columns: 1.2fr 1fr;
+    gap: 64px;
+  }
+}
+
+.repo-card {
+  width: 100%;
+}
+
+/* Footer layouts */
+.footer-links-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 40px;
+}
+
+@media (min-width: 768px) {
+  .footer-links-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 80px;
+  }
+}
+
