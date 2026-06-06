@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,12 +17,13 @@ import {
   LogOut,
   Bell,
   Search,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 const navGroups = [
   {
-    label: "// MONITOR",
+    label: "Monitor",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/logs", label: "Log Analysis", icon: Upload },
@@ -31,7 +32,7 @@ const navGroups = [
     ],
   },
   {
-    label: "// TOOLS",
+    label: "Tools",
     items: [
       { href: "/chat", label: "AI Assistant", icon: MessageSquare },
       { href: "/scanner", label: "GitHub Scanner", icon: GitBranch },
@@ -53,22 +54,22 @@ function LiveClock() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const pathname = usePathname();
-  const [tabletExpanded, setTabletExpanded] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
 
-  // Close tablet expanded overlay on clicking outside
+  // Load collapse state from local storage on client mount
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (overlayRef.current && !overlayRef.current.contains(event.target as Node)) {
-        setTabletExpanded(false);
-      }
+    const saved = localStorage.getItem("threathunter_sidebar_collapsed");
+    if (saved === "true") {
+      setCollapsed(true);
     }
-    if (tabletExpanded) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [tabletExpanded]);
+  }, []);
+
+  const toggleCollapse = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem("threathunter_sidebar_collapsed", String(next));
+  };
 
   const isActiveLink = (href: string) => {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -77,50 +78,82 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="w-screen h-screen overflow-hidden text-[var(--text-secondary)] bg-[#0A0C0F] relative">
-      {/* ── Desktop Sidebar (lg+) ── */}
+      {/* ── Desktop & Tablet Sidebar (md+) ── */}
       <aside
-        className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[200px] bg-[#0D1117] border-r border-[#1E2229] z-30"
+        className="hidden md:flex flex-col fixed left-0 top-0 bottom-0 bg-[#0D1117] border-r border-[#1E2229] z-30 transition-all duration-300 ease-in-out"
+        style={{ width: collapsed ? "72px" : "260px" }}
       >
-        {/* Logo Section */}
-        <div className="h-[56px] flex items-center px-4 border-b border-[#1E2229]">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <span className="font-heading font-bold text-white tracking-wide text-[16px]">
-              <span className="text-[#F0EDE6]">THREAT</span>
-              <span className="text-[#00E5C3]">HUNTER</span>
-            </span>
+        {/* Header / Logo section */}
+        <div className="h-[56px] flex items-center justify-between px-4 border-b border-[#1E2229] overflow-hidden">
+          <Link href="/dashboard" className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-[rgba(0,229,195,0.1)] border border-[rgba(0,229,195,0.2)] flex items-center justify-center flex-shrink-0">
+              <Shield size={18} className="text-[var(--accent-mint)]" />
+            </div>
+            {!collapsed && (
+              <span className="font-heading font-extrabold text-white text-[15px] tracking-wider truncate">
+                THREAT<span className="text-[var(--accent-mint)]">HUNTER</span>
+              </span>
+            )}
           </Link>
         </div>
 
-        {/* Workspace Selector */}
-        <div className="px-3 py-2">
-          <div className="flex items-center justify-between px-2.5 h-[32px] border border-[#1E2229] rounded-[2px] bg-[#0A0C0F] text-[13px] font-mono text-[#C8C4BC]">
-            <span>SOC_NODE_A</span>
-            <ChevronDown size={11} className="text-[#6B7280]" />
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-grow py-2 space-y-4 overflow-y-auto">
+        {/* Navigation list */}
+        <nav className="flex-grow py-4 space-y-6 overflow-y-auto overflow-x-hidden px-3">
           {navGroups.map((group) => (
-            <div key={group.label}>
-              <div className="px-3 text-[10px] font-mono font-bold text-[#3D4452] tracking-wider mb-1 uppercase">
-                {group.label}
-              </div>
-              <div className="space-y-[2px]">
+            <div key={group.label} className="space-y-1.5">
+              {!collapsed ? (
+                <div className="px-3 text-[10px] font-mono font-bold text-[#3D4452] tracking-widest uppercase">
+                  // {group.label}
+                </div>
+              ) : (
+                <div className="h-[1px] bg-[#1E2229] my-2 mx-1" />
+              )}
+
+              <div className="space-y-[3px]">
                 {group.items.map((item) => {
                   const active = isActiveLink(item.href);
                   return (
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-2 h-[36px] px-3 text-[13px] font-medium transition-all duration-120 relative ${
+                      className={`flex items-center gap-3 h-[40px] px-3.5 rounded-lg text-[14px] font-medium transition-all duration-200 relative ${
                         active
-                          ? "bg-[#1A1F27] text-[var(--accent-mint)] border-l-[2px] border-[var(--accent-mint)]"
-                          : "text-[#6B7280] hover:text-[#F0EDE6] hover:bg-[#1A1F27]"
+                          ? "bg-[#1A1F27] text-white"
+                          : "text-[#6B7280] hover:text-white hover:bg-[#13161B]"
                       }`}
+                      onMouseEnter={() => collapsed && setActiveTooltip(item.label)}
+                      onMouseLeave={() => setActiveTooltip(null)}
                     >
-                      <item.icon size={16} className={active ? "text-[var(--accent-mint)]" : "text-[#6B7280]"} />
-                      <span>{item.label}</span>
+                      {/* Left indicator bar for active item */}
+                      {active && (
+                        <span className="absolute left-0 top-2 bottom-2 w-[3px] bg-[var(--accent-mint)] rounded-r-md" />
+                      )}
+
+                      <item.icon
+                        size={18}
+                        className={`flex-shrink-0 transition-colors ${
+                          active ? "text-[var(--accent-mint)]" : "text-[#6B7280] group-hover:text-white"
+                        }`}
+                      />
+
+                      {!collapsed && (
+                        <span className="truncate transition-opacity duration-200">{item.label}</span>
+                      )}
+
+                      {/* Tooltip Overlay on Collapsed Sidebar */}
+                      <AnimatePresence>
+                        {collapsed && activeTooltip === item.label && (
+                          <motion.div
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ duration: 0.15 }}
+                            className="absolute left-[80px] bg-[#13161B] border border-[#1E2229] text-white font-mono text-[11px] px-2.5 py-1.5 rounded-md shadow-xl z-50 whitespace-nowrap"
+                          >
+                            {item.label}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </Link>
                   );
                 })}
@@ -129,113 +162,65 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-        {/* User Footer */}
-        <div className="h-[52px] border-t border-[#1E2229] bg-[#0A0C0F] flex items-center justify-between px-3">
+        {/* Sidebar Footer & Collapse Toggle */}
+        <div className="border-t border-[#1E2229] bg-[#0D1117] p-3 space-y-2">
+          {/* User profile */}
           {session?.user && (
-            <div className="flex items-center gap-2 w-full">
+            <div className="flex items-center gap-3 min-w-0 p-1.5 rounded-lg">
               {session.user.image ? (
                 <Image
                   src={session.user.image}
                   alt="avatar"
                   width={28}
                   height={28}
-                  className="rounded-full border border-[#1E2229]"
+                  className="rounded-full border border-[#1E2229] flex-shrink-0"
                 />
               ) : (
-                <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-xs font-bold bg-[#1E2229] text-[var(--accent-mint)]">
+                <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-xs font-bold bg-[#1E2229] text-[var(--accent-mint)] flex-shrink-0">
                   {session.user.name?.[0]?.toUpperCase() ?? "U"}
                 </div>
               )}
-              <div className="flex-grow min-w-0">
-                <div className="text-[13px] font-bold text-white truncate leading-tight font-heading">
-                  {session.user.name}
-                </div>
-              </div>
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="p-1 hover:text-[var(--color-danger)] transition-colors text-[#6B7280]"
-                title="Sign Out"
-              >
-                <LogOut size={16} />
-              </button>
-            </div>
-          )}
-        </div>
-      </aside>
-
-      {/* ── Tablet Sidebar (md Only) ── */}
-      <aside
-        ref={overlayRef}
-        className="hidden md:flex lg:hidden flex-col fixed left-0 top-0 bottom-0 bg-[#0D1117] border-r border-[#1E2229] z-30 transition-all duration-180"
-        style={{ width: tabletExpanded ? "200px" : "48px" }}
-      >
-        {/* Logo */}
-        <div className="h-[48px] flex items-center px-3 border-b border-[#1E2229]">
-          <button onClick={() => setTabletExpanded(!tabletExpanded)} className="flex items-center gap-2 outline-none">
-            <Shield size={16} className="text-[var(--accent-mint)]" />
-            {tabletExpanded && (
-              <span className="font-heading font-bold text-white tracking-wide text-xs">TH_HUNTER</span>
-            )}
-          </button>
-        </div>
-
-        {/* Rail Items */}
-        <nav className="flex-1 py-4 px-1 space-y-4 overflow-y-auto overflow-x-hidden">
-          {navGroups.map((group) => (
-            <div key={group.label} className="space-y-1">
-              {tabletExpanded && (
-                <div className="px-3 text-[9px] font-mono text-[#3D4452] tracking-wider uppercase">
-                  {group.label.replace("// ", "")}
+              {!collapsed && (
+                <div className="flex-grow min-w-0">
+                  <div className="text-[13px] font-bold text-white truncate leading-tight">
+                    {session.user.name}
+                  </div>
+                  <div className="text-[10px] text-[#6B7280] truncate font-mono">
+                    {session.user.email}
+                  </div>
                 </div>
               )}
-              {group.items.map((item) => {
-                const active = isActiveLink(item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-2 h-[36px] px-2 rounded-[2px] transition-all relative ${
-                      active
-                        ? "bg-[#1A1F27] text-[var(--accent-mint)]"
-                        : "text-[#6B7280] hover:text-[#F0EDE6] hover:bg-[#1A1F27]"
-                    }`}
-                    onMouseEnter={() => !tabletExpanded && setActiveTooltip(item.label)}
-                    onMouseLeave={() => setActiveTooltip(null)}
-                    onClick={() => setTabletExpanded(false)}
-                  >
-                    <item.icon size={16} className={active ? "text-[var(--accent-mint)]" : "text-[#6B7280]"} />
-                    {tabletExpanded && <span className="text-[12px] font-medium">{item.label}</span>}
-
-                    {/* Tooltip Label (140ms animation) */}
-                    <AnimatePresence>
-                      {!tabletExpanded && activeTooltip === item.label && (
-                        <motion.div
-                          initial={{ opacity: 0, x: -5 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          exit={{ opacity: 0, x: -5 }}
-                          transition={{ duration: 0.14 }}
-                          className="absolute left-[44px] bg-[#13161B] border border-[#1E2229] text-white font-mono text-[10px] px-2 py-1 z-50 whitespace-nowrap"
-                        >
-                          {item.label}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </Link>
-                );
-              })}
             </div>
-          ))}
-        </nav>
+          )}
 
-        {/* Log out icon footer */}
-        <div className="p-2 border-t border-[#1E2229] flex justify-center bg-[#0A0C0F] h-[52px] items-center">
-          <button
-            onClick={() => signOut({ callbackUrl: "/" })}
-            className="p-1.5 rounded-[2px] hover:text-[var(--color-danger)] text-[#6B7280]"
-            title="Sign Out"
-          >
-            <LogOut size={16} />
-          </button>
+          {/* Action Row */}
+          <div className="flex items-center justify-between gap-1.5 pt-1">
+            <button
+              onClick={toggleCollapse}
+              className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#1E2229] hover:bg-[#1A1F27] hover:text-white text-[#6B7280] transition-colors"
+              title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+            </button>
+
+            {!collapsed ? (
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="flex items-center gap-2 px-3 py-1.5 text-xs text-[#6B7280] hover:text-[var(--color-danger)] transition-colors rounded-lg border border-transparent hover:border-[#1E2229]"
+              >
+                <LogOut size={13} />
+                <span>Sign Out</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="flex items-center justify-center w-8 h-8 rounded-lg border border-[#1E2229] hover:bg-[rgba(255,77,77,0.1)] hover:text-[var(--color-danger)] text-[#6B7280] transition-colors"
+                title="Sign Out"
+              >
+                <LogOut size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -268,46 +253,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* ── Main Layout Wrapper ── */}
       <div
-        className="fixed top-0 bottom-0 right-0 flex flex-col overflow-hidden transition-all duration-180"
+        className="fixed top-0 bottom-0 right-0 flex flex-col overflow-hidden transition-all duration-300 ease-in-out"
         style={{
           left: "var(--sidebar-width)",
           width: "calc(100vw - var(--sidebar-width))",
           height: "100vh",
         }}
       >
-        {/* Topbar Command Bar */}
+        {/* Topbar Header */}
         <header
-          className="flex-shrink-0 flex items-center justify-between border-b border-[#1E2229] bg-[#0D1117] relative z-20 h-[48px] px-5"
+          className="flex-shrink-0 flex items-center justify-between border-b border-[#1E2229] bg-[#0D1117] relative z-20 h-[56px] px-6"
         >
-          {/* Left breadcrumb */}
+          {/* Left breadcrumb info */}
           <div className="flex items-center gap-3">
-            <span className="font-mono text-[12px] text-[#6B7280]">
-              OPERATOR_NODE // CORE_ENGINE
+            <span className="font-mono text-[12px] text-[#6B7280] uppercase tracking-wider">
+              NODE // TH_HUNTER_XDR
             </span>
           </div>
 
-          {/* Center search input */}
-          <div className="flex items-center justify-center flex-1 max-w-[280px]">
+          {/* Search panel */}
+          <div className="flex items-center justify-center flex-1 max-w-[320px]">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6B7280]" size={14} />
               <input
                 id="search-command-input"
                 type="text"
-                placeholder="Search..."
-                className="cyber-input pl-9 h-[32px] font-mono text-xs w-full bg-[#13161B] py-1 outline-none border border-[#1E2229]"
+                placeholder="Type command or query..."
+                className="cyber-input pl-9 h-[34px] font-mono text-xs w-full bg-[#13161B] py-1 outline-none border border-[#1E2229] rounded-md"
               />
             </div>
           </div>
 
-          {/* Right details */}
-          <div className="flex items-center gap-4">
+          {/* Right utility items */}
+          <div className="flex items-center gap-5">
             <LiveClock />
             <button
-              className="relative p-1 text-[#6B7280] hover:text-white transition-colors"
-              aria-label="View notifications"
+              className="relative p-1.5 text-[#6B7280] hover:text-white transition-colors"
+              aria-label="Notifications"
             >
               <Bell size={16} />
-              <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-[var(--accent-mint)] rounded-full" />
+              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[var(--accent-mint)] rounded-full animate-ping" />
             </button>
             {session?.user && (
               session.user.image ? (
@@ -327,39 +312,32 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Main Content Area */}
+        {/* Page view content container */}
         <main
-          className="flex-1 overflow-hidden relative flex flex-col p-6 gap-3"
+          className="flex-1 overflow-y-auto relative flex flex-col p-6 gap-3"
           style={{
-            height: "calc(100vh - 48px)",
+            height: "calc(100vh - 56px)",
             paddingBottom: "calc(24px + var(--content-bottom-pad))",
           }}
         >
           <div className="absolute inset-0 pointer-events-none radial-glow opacity-30" />
-          <div className="relative z-10 flex-1 flex flex-col overflow-hidden h-full">
+          <div className="relative z-10 flex-1 flex flex-col min-h-0">
             {children}
           </div>
         </main>
       </div>
 
-      {/* Breakpoint custom paddings to prevent Layout Shifts */}
+      {/* Breakpoint custom sidebar variables */}
       <style jsx global>{`
         :root {
-          --sidebar-width: 200px;
-          --header-height: 48px;
+          --sidebar-width: ${collapsed ? "72px" : "260px"};
+          --header-height: 56px;
           --content-bottom-pad: 0px;
-        }
-        @media (max-width: 1023px) {
-          :root {
-            --sidebar-width: 48px;
-            --header-height: 48px;
-            --content-bottom-pad: 0px;
-          }
         }
         @media (max-width: 767px) {
           :root {
             --sidebar-width: 0px;
-            --header-height: 48px;
+            --header-height: 56px;
             --content-bottom-pad: 56px;
           }
         }

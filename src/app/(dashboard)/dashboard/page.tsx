@@ -9,8 +9,14 @@ import {
   Cpu,
   Plus,
   X,
+  Server,
+  Activity,
+  Heart,
+  Database,
+  Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import Link from "next/link";
 
 // Animated entry transitions
 const fadeUp = (delay = 0) => ({
@@ -58,29 +64,7 @@ export default function DashboardPage() {
     toast.success(`Dismissed incident threat code [${id}]`);
   };
 
-  const handleQuickReport = () => {
-    toast.success("Quick Threat Report drafted. Operator action recorded.");
-  };
-
-  // ─── DYNAMIC SELECTORS FROM DB TELEMETRY ────────────────────────────
-
-  // 1. Dynamically group threat IPs to show mobile Top Attack Sources
-  const topSources = stats?.recentThreats
-    ? Object.values(
-        stats.recentThreats.reduce((acc: any, threat: any) => {
-          const key = threat.ip;
-          if (!acc[key]) {
-            acc[key] = { ip: threat.ip, country: threat.file || "System Ingest", probes: 0, severity: threat.severity };
-          }
-          acc[key].probes += 1;
-          return acc;
-        }, {})
-      )
-        .sort((a: any, b: any) => b.probes - a.probes)
-        .slice(0, 5)
-    : [];
-
-  // 2. Dynamically distribute threat points onto the World Map Coordinates
+  // Dynamically map coordinates for World Map visual
   const mapDots: MapDot[] = stats?.recentThreats
     ? stats.recentThreats.map((threat: any, idx: number) => {
         const coords = [
@@ -105,16 +89,18 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <div className="h-6 w-48 skeleton" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="workspace-container space-y-4">
+        <div className="h-[60px] flex items-center justify-between border-b border-[#1E2229] pb-3 mb-2">
+          <div className="skeleton h-6 w-32" />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-20 skeleton" />
+            <div key={i} className="h-[140px] skeleton rounded-2xl" />
           ))}
         </div>
-        <div className="grid lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 h-72 skeleton" />
-          <div className="h-72 skeleton" />
+        <div className="grid lg:grid-cols-[2fr_1fr] gap-4">
+          <div className="h-72 skeleton rounded-2xl" />
+          <div className="h-72 skeleton rounded-2xl" />
         </div>
       </div>
     );
@@ -131,45 +117,59 @@ export default function DashboardPage() {
     stats.riskScore > 75 ? "Critical Risk" : stats.riskScore > 45 ? "High Risk" : "Secure";
 
   return (
-    <div className="h-full flex flex-col gap-3 overflow-hidden select-none">
+    <div className="workspace-container">
       {/* ── Page Header ── */}
-      <div className="flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Cpu size={14} className="text-[var(--accent-mint)] animate-pulse" />
-          <span className="font-mono text-[10px] tracking-widest text-[var(--text-muted)] uppercase">
-            OPERATOR_NODE // ACTIVE_INGEST
-          </span>
+      <div className="flex-shrink-0 flex items-center justify-between h-[60px] border-b border-[#1E2229] pb-3 mb-2">
+        <div>
+          <h1 className="text-xl font-bold font-heading text-white tracking-tight">Dashboard</h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium">Real-Time Threat Monitoring</p>
         </div>
-        <h1 className="text-[22px] font-heading font-semibold text-white leading-none">Security Command Console</h1>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 bg-[var(--accent-mint)] rounded-full animate-pulse" />
+          <span className="font-mono text-[11px] text-[var(--accent-mint)] font-bold tracking-wider">// AGENT_ONLINE</span>
+        </div>
       </div>
 
       {/* ── Metric Cards Row ── */}
-      <div className="flex-shrink-0 grid grid-cols-4 gap-3">
+      <div className="flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "LOGS SCANNED", value: stats.totalLogsScanned.toLocaleString(), trend: "+2.4%", labelColor: "var(--text-primary)" },
-          { label: "THREATS FLAGGED", value: stats.totalThreats, trend: "SYSTEM MATCH", labelColor: "var(--color-warning)" },
-          { label: "CRITICAL ALERTS", value: stats.criticalAlerts, trend: "REQUIRED ACTIONS", labelColor: "var(--color-danger)" },
-          { label: "RISK LEVEL", value: `${stats.riskScore}/100`, trend: riskLabel.toUpperCase(), labelColor: riskColor },
+          { label: "LOGS SCANNED", value: stats.totalLogsScanned.toLocaleString(), trend: "+2.4%", desc: "vs last 24h", color: "var(--accent-mint)", spark: [30, 45, 35, 60, 50, 75, 90] },
+          { label: "THREATS FLAGGED", value: stats.totalThreats, trend: "SYSTEM MATCH", desc: "active signatures", color: "var(--color-warning)", spark: [10, 25, 15, 35, 20, 45, 30] },
+          { label: "CRITICAL ALERTS", value: stats.criticalAlerts, trend: "ACTION REQUIRED", desc: "immediate attention", color: "var(--color-danger)", spark: [5, 12, 8, 15, 10, 18, 15] },
+          { label: "RISK LEVEL", value: `${stats.riskScore}/100`, trend: riskLabel.toUpperCase(), desc: "current status", color: riskColor, spark: [80, 70, 65, 60, 55, 50, 45] },
         ].map((card, i) => (
           <motion.div
             key={card.label}
             {...fadeUp(i * 0.03)}
-            className="bg-[#13161B] border border-[#1E2229] rounded-[4px] p-4 flex flex-col justify-between"
+            className="glass-card flex flex-col justify-between"
+            style={{ height: "140px" }}
           >
-            <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[#6B7280]">
-                {card.label}
-              </p>
-              <h3
-                className="font-bold tracking-tight font-heading mt-[6px] text-white"
-                style={{ fontSize: "clamp(28px, 3vw, 36px)", lineHeight: 1 }}
-              >
-                {card.value}
-              </h3>
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-mono text-[11px] uppercase tracking-wider text-[#6B7280]">
+                  {card.label}
+                </p>
+                <h3 className="font-bold tracking-tight font-heading mt-1.5 text-white text-[24px]">
+                  {card.value}
+                </h3>
+              </div>
+              {/* Sparkline mini chart visual using simple svg */}
+              <div className="w-16 h-8 opacity-60">
+                <svg viewBox="0 0 70 30" className="w-full h-full">
+                  <path
+                    d={`M ${card.spark.map((val, idx) => `${idx * 10},${30 - (val * 30 / 100)}`).join(" L ")}`}
+                    fill="none"
+                    stroke={card.color}
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
-            <div className="flex items-center justify-between mt-[6px]">
-              <span className="font-mono text-[10px] text-[#3D4452]">TREND</span>
-              <span className="font-mono text-[12px] font-bold" style={{ color: card.labelColor }}>
+            <div className="flex items-center justify-between text-[11px] border-t border-white/5 pt-2">
+              <span className="text-[#6b7280]">{card.desc}</span>
+              <span className="font-mono font-bold" style={{ color: card.color }}>
                 {card.trend}
               </span>
             </div>
@@ -178,12 +178,12 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Asymmetric Layout Grid (Feed on left, tactical panels on right) ── */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-3 overflow-hidden h-full">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-4 overflow-hidden h-full min-h-0">
         {/* Left Panel (Feed) */}
-        <div className="bg-[#13161B] border border-[#1E2229] rounded-[4px] flex flex-col overflow-hidden h-full">
+        <div className="glass-card flex flex-col overflow-hidden h-full p-0">
           {/* Panel Header */}
-          <div className="h-[40px] flex-shrink-0 px-[16px] flex items-center justify-between border-b border-[#161A20]">
-            <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// ACTIVE INCIDENT FEEDS</span>
+          <div className="h-[48px] flex-shrink-0 px-5 flex items-center justify-between border-b border-[#1E2229]">
+            <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// ACTIVE INCIDENT FEED</span>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-[var(--accent-mint)] rounded-full animate-pulse" />
               <span className="font-mono text-[10px] text-[var(--accent-mint)] font-bold">REAL_TIME</span>
@@ -191,8 +191,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Table Column headers */}
-          <div className="h-[32px] flex-shrink-0 px-[16px] flex items-center bg-[#0D1117] border-b border-[#1E2229]">
-            <div className="grid grid-cols-[32px_1fr_120px_120px_64px_80px_80px] w-full gap-2 items-center font-mono text-[10px] text-[#3D4452] uppercase tracking-[0.08em] font-bold">
+          <div className="h-[36px] flex-shrink-0 px-5 flex items-center bg-[#0D1117] border-b border-[#1E2229]">
+            <div className="grid grid-cols-[32px_1fr_120px_120px_64px_80px_80px] w-full gap-2 items-center font-mono text-[11px] text-[#3D4452] uppercase tracking-[0.08em] font-bold">
               <span>Sev</span>
               <span>Threat Type</span>
               <span>Source IP</span>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Table Body Scroll Area (Real DB Threats list) */}
-          <div className="flex-grow overflow-y-auto divide-y divide-[#161A20]">
+          <div className="flex-grow overflow-y-auto divide-y divide-[#161A20] min-h-0">
             {stats.recentThreats && stats.recentThreats.length > 0 ? (
               stats.recentThreats.map((threat: any, idx: number) => {
                 const dotColor =
@@ -217,15 +217,15 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={threat.id}
-                    className="h-[40px] px-[16px] flex items-center hover:bg-[#1A1F27] transition-colors group"
+                    className="h-[44px] px-5 flex items-center hover:bg-[#1A1F27] transition-colors group"
                     style={{
-                      backgroundColor: idx % 2 === 1 ? "rgba(255,255,255,0.015)" : "transparent",
+                      backgroundColor: idx % 2 === 1 ? "rgba(255,255,255,0.01)" : "transparent",
                     }}
                   >
                     <div className="grid grid-cols-[32px_1fr_120px_120px_64px_80px_80px] w-full gap-2 items-center">
                       {/* Severity dot */}
                       <div className="flex items-center">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: dotColor }} />
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: dotColor }} />
                       </div>
                       {/* Threat Type */}
                       <div className="font-heading font-semibold text-[13px] text-[#F0EDE6] truncate">{threat.type}</div>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                         </span>
                       </div>
                       {/* Action buttons (revealed on hover) */}
-                      <div className="text-right flex items-center justify-end gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                      <div className="text-right flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => handleDismissThreat(threat.id)}
                           className="p-1 hover:text-[var(--color-danger)] transition-colors"
@@ -253,37 +253,47 @@ export default function DashboardPage() {
                         >
                           <X size={14} />
                         </button>
-                        <button
+                        <Link
+                          href="/threats"
                           className="p-1 hover:text-[var(--accent-mint)] transition-colors"
                           title="Investigate target"
                         >
                           <ArrowRight size={14} />
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-2">
-                <Shield size={24} className="text-[#6B7280]" />
-                <div className="text-white font-heading font-semibold text-xs">No Active Threats Detected</div>
-                <div className="font-mono text-[11px] text-[#6B7280]">Last checked: just now</div>
+              <div className="h-full flex flex-col items-center justify-center p-12 text-center max-w-md mx-auto gap-4">
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/5 border border-white/10">
+                  <Shield size={28} className="text-[#6B7280]" />
+                </div>
+                <div>
+                  <h3 className="text-white font-heading font-bold mb-1">No Active Incidents Detected</h3>
+                  <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+                    ThreatHunter has not flagged any log anomalies or vulnerable keys yet. Upload telemetry logs or trigger a GitHub repository scanner to start hunting.
+                  </p>
+                </div>
+                <Link href="/logs" className="btn-primary text-xs flex items-center gap-2">
+                  <Plus size={14} /> Upload Logs
+                </Link>
               </div>
             )}
           </div>
         </div>
 
         {/* Right Column Stack */}
-        <div className="flex flex-col gap-3 h-full overflow-hidden w-[380px]">
-          {/* Threat Map Panel (flex 0 0 55%) */}
-          <div className="bg-[#13161B] border border-[#1E2229] rounded-[4px] flex-[0_0_55%] flex flex-col overflow-hidden relative">
-            <div className="h-[40px] flex-shrink-0 px-[16px] flex items-center justify-between border-b border-[#161A20]">
+        <div className="flex flex-col gap-4 h-full overflow-y-auto min-h-0">
+          {/* Threat Radar Panel */}
+          <div className="glass-card flex flex-col overflow-hidden relative p-0 h-[260px] flex-shrink-0">
+            <div className="h-[44px] flex-shrink-0 px-5 flex items-center justify-between border-b border-[#1E2229]">
               <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// TACTICAL THREAT RADAR</span>
             </div>
 
             <div className="flex-1 relative overflow-hidden flex items-center justify-center p-3">
-              <svg viewBox="0 0 100 50" className="w-full h-full text-[#1E2229] max-w-[340px]">
+              <svg viewBox="0 0 100 50" className="w-full h-full text-[#1E2229] max-w-[320px]">
                 {/* Simulated lightweight continent shapes */}
                 <path d="M5,12 Q15,8 22,14 T30,12 T38,18 T22,35 Z" fill="#1E2229" stroke="#2A3040" strokeWidth="0.5" />
                 <path d="M42,8 Q50,6 60,12 T70,8 T80,16 T65,32 Z" fill="#1E2229" stroke="#2A3040" strokeWidth="0.5" />
@@ -319,7 +329,7 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.95 }}
-                    className="absolute bottom-2 left-2 right-2 p-2 border border-[#1E2229] bg-[#0D1117] text-[10px] font-mono z-50"
+                    className="absolute bottom-2 left-2 right-2 p-2 border border-[#1E2229] bg-[#0D1117] text-[10px] font-mono z-50 rounded-md"
                   >
                     <div className="text-white font-bold">{hoveredDot.type}</div>
                     <div className="text-[var(--accent-mint)]">{hoveredDot.ip} ({hoveredDot.country})</div>
@@ -329,13 +339,45 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Severity Breakdown Chart (flex-1) */}
-          <div className="bg-[#13161B] border border-[#1E2229] rounded-[4px] flex-grow flex flex-col overflow-hidden">
-            <div className="h-[40px] flex-shrink-0 px-[16px] flex items-center justify-between border-b border-[#161A20]">
-              <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// INCIDENTS CATEGORIZATION</span>
+          {/* System Health Widget */}
+          <div className="glass-card p-5 space-y-4 flex-shrink-0">
+            <h3 className="text-xs font-mono text-[#6B7280] uppercase tracking-[0.08em]">// SYSTEM SECURITY STATUS</h3>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#0A0C0F] border border-white/5">
+                <Server size={14} className="text-[var(--accent-mint)]" />
+                <div>
+                  <p className="text-[10px] text-[#6b7280] font-mono">DATABASE</p>
+                  <p className="font-bold text-white leading-none mt-1">CONNECTED</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#0A0C0F] border border-white/5">
+                <Activity size={14} className="text-[var(--accent-mint)]" />
+                <div>
+                  <p className="text-[10px] text-[#6b7280] font-mono">BUFFER RATE</p>
+                  <p className="font-bold text-white leading-none mt-1">OPTIMAL</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#0A0C0F] border border-white/5">
+                <Heart size={14} className="text-[var(--accent-mint)]" />
+                <div>
+                  <p className="text-[10px] text-[#6b7280] font-mono">HEURISTICS</p>
+                  <p className="font-bold text-white leading-none mt-1">7 / 7 RULES</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 p-2.5 rounded-lg bg-[#0A0C0F] border border-white/5">
+                <Clock size={14} className="text-[var(--accent-mint)]" />
+                <div>
+                  <p className="text-[10px] text-[#6b7280] font-mono">LATENCY</p>
+                  <p className="font-bold text-white leading-none mt-1">&lt; 15MS</p>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div className="flex-1 p-4 flex flex-col justify-between overflow-y-auto min-h-0 gap-3">
+          {/* Severity Breakdown Progress Rows */}
+          <div className="glass-card flex flex-col p-5 gap-3 flex-grow min-h-0">
+            <h3 className="text-xs font-mono text-[#6B7280] uppercase tracking-[0.08em] mb-1">// INCIDENT SEVERITY DENSITY</h3>
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1">
               {[
                 { label: "Critical", count: stats.criticalAlerts, color: "#FF4D4D", total: stats.totalThreats || 1 },
                 { label: "High", count: stats.highAlerts || 0, color: "#F5A623", total: stats.totalThreats || 1 },
@@ -353,9 +395,9 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="h-1.5 border border-[#1E2229] bg-[#0A0C0F] overflow-hidden relative">
+                    <div className="h-2 border border-[#1E2229] bg-[#0A0C0F] overflow-hidden relative rounded-full">
                       <div
-                        className="h-full"
+                        className="h-full rounded-full"
                         style={{
                           backgroundColor: row.color,
                           width: animateBars ? `${percentage}%` : "0%",
@@ -370,34 +412,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      {/* Floating Action Button (FAB) on mobile (xs/sm only) */}
-      <div className="md:hidden fixed bottom-20 right-4 z-40">
-        <button
-          onClick={handleQuickReport}
-          className="w-12 h-12 rounded-full bg-[var(--accent-mint)] text-[var(--bg-void)] flex items-center justify-center shadow-lg border border-[var(--accent-mint)] hover:bg-[var(--accent-mint-dim)] transition-colors focus:outline-none"
-          title="Report Active Threat Incident"
-        >
-          <Plus size={22} />
-        </button>
-      </div>
-
-      {/* CSS Pulse styles for radar dots */}
-      <style jsx global>{`
-        @keyframes radarPing {
-          0% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(2.4);
-            opacity: 0;
-          }
-        }
-        .animate-ping {
-          animation: radarPing 1.5s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-        }
-      `}</style>
     </div>
   );
 }

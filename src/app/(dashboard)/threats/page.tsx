@@ -3,8 +3,18 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  AlertTriangle, Shield, Upload, Search, Filter,
-  ShieldAlert, Calendar, ChevronDown, ChevronUp, Terminal
+  AlertTriangle,
+  Shield,
+  Upload,
+  Search,
+  Filter,
+  ShieldAlert,
+  Calendar,
+  ChevronRight,
+  Terminal,
+  Clock,
+  ExternalLink,
+  Info,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -18,6 +28,7 @@ interface Threat {
   evidence: string[] | null;
   affectedIps: string[] | null;
   occurrences: number;
+  aiAnalysis: string | null;
   createdAt: string;
 }
 
@@ -26,7 +37,7 @@ export default function ThreatsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
-  const [expandedThreat, setExpandedThreat] = useState<string | null>(null);
+  const [selectedThreatId, setSelectedThreatId] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchThreats() {
@@ -35,6 +46,9 @@ export default function ThreatsPage() {
         if (!res.ok) throw new Error("Failed to load threats");
         const data = await res.json();
         setThreats(data);
+        if (data.length > 0) {
+          setSelectedThreatId(data[0].id);
+        }
       } catch (err) {
         toast.error("Failed to load threat feed");
       } finally {
@@ -61,175 +75,241 @@ export default function ThreatsPage() {
     return matchesSearch && matchesSeverity;
   });
 
-  const toggleExpand = (id: string) => {
-    setExpandedThreat(expandedThreat === id ? null : id);
+  const selectedThreat = threats.find(t => t.id === selectedThreatId);
+
+  const getSeverityCount = (sev: string) => {
+    if (sev === "all") return threats.length;
+    return threats.filter(t => t.severity === sev).length;
   };
 
   return (
-    <div className="w-full max-w-[1500px] mx-auto space-y-6">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="text-2xl font-bold font-heading text-white">Threat Intelligence</h1>
-        <p className="text-sm mt-1 text-gray-400">
-          Real-time signature analysis and behavior anomalies detected in logs.
-        </p>
-      </motion.div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={14} />
-          <input
-            type="text"
-            placeholder="Search by threat, description, or IP..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="cyber-input pl-9 w-full text-xs py-2.5"
-          />
+    <div className="workspace-container overflow-y-auto">
+      {/* ── Header ── */}
+      <div className="flex-shrink-0 flex items-center justify-between h-[60px] border-b border-[#1E2229] pb-3 mb-2">
+        <div>
+          <h1 className="text-xl font-bold font-heading text-white tracking-tight">Threat Intelligence</h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium">Correlated IOC security anomalies</p>
         </div>
-        <div className="relative flex items-center gap-2">
-          <Filter className="text-gray-500" size={14} />
-          <select
-            value={severityFilter}
-            onChange={(e) => setSeverityFilter(e.target.value)}
-            className="cyber-input text-xs py-2.5 px-3 bg-black min-w-[140px]"
-          >
-            <option value="all">All Severities</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
-          </select>
+        <div className="flex items-center gap-2">
+          <ShieldAlert size={13} className="text-red-400 animate-pulse" />
+          <span className="font-mono text-[10px] text-red-400 font-bold uppercase tracking-wider">// THREAT_STREAM_ACTIVE</span>
         </div>
       </div>
 
-      {/* Threats List */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="glass-card p-6 skeleton h-20" />
-          ))}
+      {/* ── Controls Row ── */}
+      <div className="flex-shrink-0 flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative flex-grow max-w-md w-full">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7280]" size={14} />
+          <input
+            type="text"
+            placeholder="Search threats, signatures, IPs..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="cyber-input pl-10"
+          />
         </div>
-      ) : filteredThreats.length === 0 ? (
-        <motion.div className="glass-card p-16 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <AlertTriangle size={48} className="mx-auto mb-4 text-gray-600" />
-          <h2 className="text-lg font-semibold mb-2 text-white">No Threats Match Criteria</h2>
-          <p className="text-xs text-gray-500 mb-6">
-            {threats.length === 0
-              ? "Upload security logs to start detecting threats. Alerts will appear here in real-time."
-              : "Try adjusting your search query or severity filter."}
-          </p>
-          {threats.length === 0 && (
-            <Link href="/logs" className="btn-primary inline-flex items-center gap-2 text-xs">
-              <Upload size={12} />
-              Upload Logs
-            </Link>
-          )}
-        </motion.div>
-      ) : (
-        <div className="space-y-3">
-          {filteredThreats.map((threat, i) => {
-            const isExpanded = expandedThreat === threat.id;
-            const color = getRiskColor(threat.severity);
 
+        {/* Severity Tabs (Horizontal list style) */}
+        <div className="flex gap-1.5 flex-wrap">
+          {["all", "critical", "high", "medium", "low"].map(sev => {
+            const isActive = severityFilter === sev;
+            const count = getSeverityCount(sev);
             return (
-              <motion.div
-                key={threat.id}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="glass-card overflow-hidden"
+              <button
+                key={sev}
+                onClick={() => {
+                  setSeverityFilter(sev);
+                  // Select first filtered threat
+                  const filtered = threats.filter(t => sev === "all" || t.severity === sev);
+                  if (filtered.length > 0) {
+                    setSelectedThreatId(filtered[0].id);
+                  } else {
+                    setSelectedThreatId(null);
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-lg border text-xs font-mono font-bold flex items-center gap-2 capitalize transition-all duration-200 ${
+                  isActive
+                    ? "bg-[#1E2229] text-white border-[#00E5C3]"
+                    : "bg-[#0D1117]/40 border-white/5 text-[#6B7280] hover:border-white/10 hover:text-white"
+                }`}
               >
-                {/* Collapsed view summary */}
-                <div
-                  onClick={() => toggleExpand(threat.id)}
-                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-white/2 transition-colors select-none"
-                >
-                  <div className="flex items-center gap-3">
-                    <ShieldAlert size={18} style={{ color }} className="flex-shrink-0" />
-                    <div>
-                      <h3 className="text-xs font-bold font-mono text-white">{threat.title}</h3>
-                      <div className="flex items-center gap-3 mt-1 text-[10px] text-gray-500 font-mono">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={10} />
-                          {new Date(threat.createdAt).toLocaleDateString()}
-                        </span>
-                        {threat.affectedIps && threat.affectedIps.length > 0 && (
-                          <span className="text-cyan-400">
-                            IP: {threat.affectedIps.slice(0, 2).join(", ")}
-                            {threat.affectedIps.length > 2 && "..."}
-                          </span>
-                        )}
-                        <span>{threat.occurrences} occurrence(s)</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`badge-${threat.severity}`}>{threat.severity}</span>
-                    {isExpanded ? <ChevronUp size={14} className="text-gray-500" /> : <ChevronDown size={14} className="text-gray-500" />}
-                  </div>
-                </div>
-
-                {/* Expanded Details view */}
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-gray-900/40 bg-black/20 p-4 space-y-4"
-                    >
-                      <div>
-                        <p className="text-[10px] font-mono uppercase text-gray-500">Threat Description</p>
-                        <p className="text-xs text-gray-300 mt-1">{threat.description}</p>
-                      </div>
-
-                      {threat.evidence && threat.evidence.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-mono uppercase text-gray-500 flex items-center gap-1.5 mb-2">
-                            <Terminal size={10} />
-                            Log Snippet Evidence
-                          </p>
-                          <div className="bg-black/80 rounded border border-cyan-500/10 p-3 overflow-x-auto max-h-48 font-mono text-[10px] text-emerald-400 space-y-1.5">
-                            {threat.evidence.map((line, idx) => (
-                              <div key={idx} className="whitespace-pre truncate select-text">
-                                {line}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
+                <span>{sev}</span>
+                <span className="px-1.5 py-0.5 rounded bg-white/5 text-[9px]">{count}</span>
+              </button>
             );
           })}
         </div>
-      )}
+      </div>
 
-      {/* Detection rules stats */}
-      {!loading && threats.length > 0 && (
-        <motion.div className="glass-card p-5" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-          <h3 className="text-[10px] font-mono uppercase tracking-widest text-gray-500 mb-4">Active Rules Summary</h3>
-          <div className="grid sm:grid-cols-2 gap-3 text-xs">
-            {[
-              { name: "Brute Force Attack", count: threats.filter(t => t.type === "brute_force").length, color: "#ff3b5c" },
-              { name: "SQL Injection", count: threats.filter(t => t.type === "sql_injection").length, color: "#ff3b5c" },
-              { name: "Directory Traversal", count: threats.filter(t => t.type === "directory_traversal").length, color: "#ff8800" },
-              { name: "Cross-Site Scripting (XSS)", count: threats.filter(t => t.type === "xss").length, color: "#ffb800" },
-            ].map(rule => (
-              <div key={rule.name} className="flex justify-between items-center p-3 rounded-lg border border-gray-900 bg-black/20">
-                <div className="flex items-center gap-2 font-mono">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: rule.color }} />
-                  <span className="text-gray-400">{rule.name}</span>
-                </div>
-                <span className="font-bold font-mono text-white">{rule.count} detected</span>
-              </div>
-            ))}
+      {/* ── Grid Split (Left: Timeline Feed; Right: Investigation Drawer) ── */}
+      <div className="flex-grow grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-4 overflow-hidden min-h-0">
+        {/* Left Column: Timeline Feed */}
+        <div className="glass-card flex flex-col p-0 overflow-hidden h-full">
+          <div className="h-[44px] flex-shrink-0 px-5 flex items-center justify-between border-b border-[#1E2229]">
+            <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// INCIDENTS TIMELINE</span>
           </div>
-        </motion.div>
-      )}
+
+          <div className="flex-grow overflow-y-auto p-5 relative min-h-0">
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 skeleton rounded-xl" />
+                ))}
+              </div>
+            ) : filteredThreats.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 gap-4 max-w-sm mx-auto">
+                <AlertTriangle size={32} className="text-[#3D4452]" />
+                <div>
+                  <h3 className="text-white font-heading font-semibold text-xs">No active alerts matched</h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+                    Adjust severity filters or upload log files to populate incident vectors.
+                  </p>
+                </div>
+                {threats.length === 0 && (
+                  <Link href="/logs" className="btn-primary text-xs flex items-center gap-2 py-2 px-4">
+                    <Upload size={12} /> Upload Logs
+                  </Link>
+                )}
+              </div>
+            ) : (
+              <div className="relative border-l border-[#1E2229] ml-3.5 space-y-4 py-2">
+                {filteredThreats.map((threat) => {
+                  const isSelected = selectedThreatId === threat.id;
+                  const color = getRiskColor(threat.severity);
+
+                  return (
+                    <div
+                      key={threat.id}
+                      onClick={() => setSelectedThreatId(threat.id)}
+                      className={`relative pl-8 cursor-pointer group transition-all duration-200`}
+                    >
+                      {/* Timeline dot marker */}
+                      <span
+                        className="absolute left-[-5px] top-4 w-2.5 h-2.5 rounded-full border bg-[#0A0C0F] transition-transform duration-300 group-hover:scale-125"
+                        style={{
+                          borderColor: color,
+                          boxShadow: isSelected ? `0 0 8px ${color}` : "none",
+                          backgroundColor: isSelected ? color : "#0A0C0F",
+                        }}
+                      />
+
+                      <div
+                        className={`p-4 rounded-xl border transition-all duration-200 ${
+                          isSelected
+                            ? "bg-[#1A1F27] border-white/10"
+                            : "bg-[#0D1117]/30 border-white/5 hover:border-white/10 hover:bg-[#13161B]/20"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-3 flex-wrap">
+                          <div>
+                            <h3 className="text-[13px] font-bold text-white font-mono leading-tight">
+                              {threat.title}
+                            </h3>
+                            <div className="flex items-center gap-3 mt-1.5 font-mono text-[10px] text-[#6B7280]">
+                              <span className="flex items-center gap-1">
+                                <Clock size={10} />
+                                {new Date(threat.createdAt).toLocaleDateString()}
+                              </span>
+                              <span>·</span>
+                              <span>{threat.occurrences} events</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className={`badge-${threat.severity}`}>{threat.severity}</span>
+                            <ChevronRight size={14} className="text-[#3D4452] group-hover:text-white transition-colors" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Investigation Panel */}
+        <div className="glass-card flex flex-col p-0 overflow-hidden h-full">
+          <div className="h-[44px] flex-shrink-0 px-5 flex items-center justify-between border-b border-[#1E2229]">
+            <span className="font-mono text-[11px] text-[#6B7280] tracking-[0.08em] uppercase">// INVESTIGATION PANEL</span>
+          </div>
+
+          <div className="flex-grow overflow-y-auto p-5 space-y-5 min-h-0">
+            {selectedThreat ? (
+              <div className="space-y-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getRiskColor(selectedThreat.severity) }} />
+                    <span className="font-mono text-[10px] font-bold tracking-widest uppercase text-[#6B7280]">
+                      INCIDENT // {selectedThreat.severity}
+                    </span>
+                  </div>
+                  <h2 className="text-md font-bold text-white mt-1.5 leading-snug">{selectedThreat.title}</h2>
+                </div>
+
+                {/* Info summary */}
+                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-xl border border-white/5 bg-[#0D1117]/50 font-mono text-xs text-[#C8C4BC]">
+                  <div>
+                    <span className="text-[#6B7280] block text-[9px] uppercase tracking-wider">Source Vector</span>
+                    <span className="text-white truncate block mt-0.5">{selectedThreat.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-[#6B7280] block text-[9px] uppercase tracking-wider">Alert Log File</span>
+                    <span className="text-white truncate block mt-0.5">{selectedThreat.affectedIps?.[0] || "Auth stream"}</span>
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <h4 className="text-xs font-mono font-bold text-white uppercase tracking-wider mb-1">Anatomy / Details</h4>
+                  <p className="text-xs text-[var(--text-muted)] leading-relaxed">{selectedThreat.description}</p>
+                </div>
+
+                {/* Evidence snippet */}
+                {selectedThreat.evidence && selectedThreat.evidence.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-mono font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <Terminal size={12} className="text-purple-400" />
+                      Ingested Log Evidence
+                    </h4>
+                    <div className="p-3 bg-black/90 border border-white/5 rounded-lg overflow-x-auto font-mono text-[10px] text-emerald-400 select-text max-h-48 divide-y divide-white/5">
+                      {selectedThreat.evidence.map((line, idx) => (
+                        <div key={idx} className="py-1 first:pt-0 last:pb-0 whitespace-pre truncate">
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Recommendations */}
+                {selectedThreat.aiAnalysis && (
+                  <div className="p-4 rounded-xl border border-purple-500/15 bg-purple-500/5">
+                    <h4 className="text-xs font-heading font-bold text-white flex items-center gap-1.5 mb-2">
+                      <Info size={13} className="text-purple-400 animate-pulse" />
+                      AI SOC Recommendation Brief
+                    </h4>
+                    <div className="text-xs text-[#C8C4BC] leading-relaxed prose prose-sm max-w-none">
+                      {selectedThreat.aiAnalysis}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center p-8 text-center text-[var(--text-muted)] gap-3">
+                <Shield size={28} className="text-[#3D4452]" />
+                <div>
+                  <h4 className="text-white font-heading font-bold text-xs">No Incident Selected</h4>
+                  <p className="text-xs text-[var(--text-muted)] mt-1 max-w-xs leading-relaxed">
+                    Select any threat indicator in the timeline list to investigate events, logs, and AI-powered recommendations.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

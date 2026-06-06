@@ -33,13 +33,15 @@
   --text-landing-muted: #64748B;
   --border-landing: rgba(255,255,255,0.08);
 
-  /* Spacing System */
-  --spacing-base: 4px;
-  --padding-page: 24px;
-  --gap-section: 32px;
-  --gap-component: 12px;
-  --padding-card: 16px;
-  --gap-label-val: 8px;
+  /* Spacing Scale (4px, 8px, 12px, 16px, 24px, 32px, 48px, 64px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
 
   /* Motion Easing & Durations */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -114,32 +116,32 @@ body {
 }
 
 h1 {
-  font-size: clamp(42px, 5vw, 64px);
+  font-size: 48px !important;
   font-weight: 700;
   line-height: 1.1;
 }
 
 h2 {
-  font-size: clamp(24px, 4vw, 52px);
+  font-size: 32px !important;
   font-weight: 600;
   line-height: 1.2;
 }
 
 h3 {
-  font-size: clamp(18px, 2.5vw, 28px);
+  font-size: 20px !important;
   font-weight: 600;
   line-height: 1.3;
 }
 
 p, span, div, li, a {
   font-family: "DM Sans", sans-serif;
-  font-size: clamp(14px, 1.5vw, 16px);
+  font-size: 16px;
   line-height: 1.5;
 }
 
 .font-mono, code, pre {
   font-family: "JetBrains Mono", monospace !important;
-  font-size: clamp(12px, 1.2vw, 14px) !important;
+  font-size: 14px !important;
 }
 
 .label-caps {
@@ -155,11 +157,13 @@ p, span, div, li, a {
 /* 1. Flat Panel Cards */
 .glass-card {
   background: var(--bg-surface);
-  border: 1px solid var(--border-outer);
-  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
   box-shadow: none;
-  transition: transform var(--duration-normal) var(--ease-spring),
-              border-color var(--duration-normal) var(--ease-spring);
+  transition: transform 250ms var(--ease-smooth),
+              border-color 250ms var(--ease-smooth),
+              box-shadow 250ms var(--ease-smooth);
   position: relative;
   overflow: hidden;
 }
@@ -168,7 +172,9 @@ p, span, div, li, a {
 @media (hover: hover) {
   .glass-card:hover {
     background: var(--bg-hover);
-    border-color: var(--border-outer);
+    border-color: var(--accent-mint);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0, 229, 195, 0.08);
   }
 }
 
@@ -450,6 +456,18 @@ p, span, div, li, a {
 .landing-theme .btn-landing-ghost:hover {
   border-color: rgba(0, 229, 168, 0.4);
   background-color: rgba(0, 229, 168, 0.05);
+}
+/* ─── Page Width System ─────────────────────────────────────────────── */
+.workspace-container {
+  max-width: 1800px;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  min-height: 0;
 }
 
 /* ─── Premium SaaS Layout Spacing & Grid System ───────────────────────── */

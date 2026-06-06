@@ -5,9 +5,23 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
-  Upload, FileText, AlertTriangle, Shield, CheckCircle,
-  X, Loader2, BarChart2, ArrowRight,
-  Activity, Server, Database, Brain, Cpu, Zap,
+  Upload,
+  FileText,
+  AlertTriangle,
+  Shield,
+  CheckCircle,
+  X,
+  Loader2,
+  BarChart2,
+  ArrowRight,
+  Server,
+  Database,
+  Brain,
+  Cpu,
+  Zap,
+  Activity,
+  History,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -44,11 +58,11 @@ const scanSteps = [
 ];
 
 const LOG_FORMATS = [
-  { name: "Apache", tag: "access.log", color: "#ff6b35" },
-  { name: "Nginx", tag: "access.log", color: "#00d9ff" },
-  { name: "Syslog", tag: "syslog", color: "#8b5cf6" },
+  { name: "Apache Access", tag: "access.log", color: "#ff6b35" },
+  { name: "Nginx Access", tag: "access.log", color: "#00d9ff" },
+  { name: "Linux Syslog", tag: "syslog", color: "#8b5cf6" },
   { name: "Auth Log", tag: "auth.log", color: "#f59e0b" },
-  { name: "CSV", tag: ".csv", color: "#10ffaa" },
+  { name: "CSV Telemetry", tag: ".csv", color: "#10ffaa" },
   { name: "Generic Text", tag: ".txt / .log", color: "#6366f1" },
 ];
 
@@ -62,6 +76,7 @@ function getRiskColor(score: number) {
   if (score > 25) return "#fbbf24";
   return "#10ffaa";
 }
+
 function getRiskLabel(score: number) {
   if (score > 75) return "Critical Risk";
   if (score > 45) return "High Risk";
@@ -75,6 +90,27 @@ export default function LogsPage() {
   const [activeStep, setActiveStep] = useState(0);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  const loadHistory = useCallback(async () => {
+    try {
+      setLoadingHistory(true);
+      const res = await fetch("/api/reports");
+      if (res.ok) {
+        const data = await res.json();
+        setHistory(data);
+      }
+    } catch (err) {
+      console.error("Failed to load scan history:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory, result]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -129,154 +165,191 @@ export default function LogsPage() {
     }
   };
 
+  const handleLoadSample = () => {
+    // Generate a mock file to test the scanner
+    const mockContent = `127.0.0.1 - - [06/Jun/2026:12:00:00 +0000] "GET /admin/config.php HTTP/1.1" 200 450
+185.220.101.44 - - [06/Jun/2026:12:05:00 +0000] "GET /index.php?id=1%27%20UNION%20SELECT%20null,username,password%20FROM%20users-- HTTP/1.1" 500 230
+192.168.1.15 - - [06/Jun/2026:12:10:00 +0000] "POST /login HTTP/1.1" 401 120
+192.168.1.15 - - [06/Jun/2026:12:10:02 +0000] "POST /login HTTP/1.1" 401 120
+192.168.1.15 - - [06/Jun/2026:12:10:05 +0000] "POST /login HTTP/1.1" 401 120`;
+    const blob = new Blob([mockContent], { type: "text/plain" });
+    const sampleFile = new File([blob], "sample_nginx_access.log", { type: "text/plain" });
+    setFile(sampleFile);
+    setResult(null);
+    setError(null);
+    toast.success("Loaded sample nginx access log. Click 'Analyze' to start!");
+  };
+
   return (
-    <div className="w-full max-w-[1500px] mx-auto space-y-5">
+    <div className="workspace-container overflow-y-auto">
       {/* ── Header ── */}
-      <motion.div {...fadeUp()}>
-        <div className="flex items-center gap-2 mb-1">
-          <Cpu size={13} className="text-purple-400" />
-          <span className="text-[10px] font-mono tracking-widest" style={{ color: "var(--text-muted)" }}>
-            SEC.DEV // LOG_INGESTION_ENGINE
-          </span>
+      <motion.div {...fadeUp()} className="flex-shrink-0 flex items-center justify-between h-[60px] border-b border-[#1E2229] pb-3 mb-2">
+        <div>
+          <h1 className="text-xl font-bold font-heading text-white tracking-tight">Log Analysis</h1>
+          <p className="text-xs text-[var(--text-muted)] font-medium">Ingest and parse server telemetry</p>
         </div>
-        <h1 className="text-2xl font-black font-heading text-white tracking-tight">Log Analysis Console</h1>
-        <p className="text-[13px] mt-1" style={{ color: "var(--text-secondary)" }}>
-          Upload server logs for AI-powered threat detection and incident reporting.
-        </p>
+        <div className="flex items-center gap-2">
+          <Cpu size={13} className="text-purple-400 animate-pulse" />
+          <span className="font-mono text-[10px] text-purple-400 font-bold uppercase tracking-wider">// PARSER_ACTIVE</span>
+        </div>
       </motion.div>
 
-      {/* ── Upload Card ── */}
-      <motion.div {...fadeUp(0.07)} className="glass-card glass-card-accent-purple overflow-hidden">
-        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+      {/* ── Main Upload Panel ── */}
+      <motion.div {...fadeUp(0.07)} className="glass-card p-0 overflow-hidden flex-shrink-0">
+        <div className="px-5 py-4 border-b flex items-center justify-between border-[#1E2229]">
           <div className="flex items-center gap-2.5">
             <Zap size={14} className="text-purple-400" />
             <h2 className="font-bold font-heading text-white text-[15px]">Ingest Telemetry File</h2>
           </div>
-          {file && !analyzing && !result && (
-            <span className="text-[10px] font-mono px-2.5 py-1 rounded-full" style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6", border: "1px solid rgba(139,92,246,0.2)" }}>
-              FILE_READY
-            </span>
-          )}
+          <button
+            onClick={handleLoadSample}
+            className="btn-ghost text-xs h-[30px] px-3 border-purple-500/30 text-purple-400 hover:bg-purple-500/5 rounded-md"
+          >
+            Load Sample Log
+          </button>
         </div>
 
-        <div className="p-5">
+        <div className="p-6">
           {!analyzing && !result && (
-            <div {...getRootProps()} className={`drop-zone ${isDragActive ? "active" : ""}`}>
+            <div
+              {...getRootProps()}
+              className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center min-h-[280px] cursor-pointer transition-all duration-300 ${
+                isDragActive
+                  ? "border-[var(--accent-mint)] bg-[rgba(0,229,195,0.03)] scale-[0.99]"
+                  : "border-[#1E2229] bg-[#0D1117]/30 hover:border-purple-500/30 hover:bg-[#13161B]/20"
+              }`}
+            >
               <input {...getInputProps()} id="log-file-input" />
-              <div className="flex flex-col items-center gap-4">
-                {/* Animated Radar */}
-                <div className="relative w-24 h-24 rounded-full overflow-hidden flex items-center justify-center"
-                  style={{ border: "1px solid rgba(0,217,255,0.2)", background: "rgba(0,217,255,0.03)" }}>
-                  <div className="absolute inset-0 origin-center"
-                    style={{ animation: "radarSweep 3s linear infinite", background: "conic-gradient(from 0deg, transparent 75%, rgba(0,217,255,0.35) 100%)" }} />
-                  <div className="absolute w-[85%] h-[1px]" style={{ background: "rgba(0,217,255,0.1)" }} />
-                  <div className="absolute h-[85%] w-[1px]" style={{ background: "rgba(0,217,255,0.1)" }} />
-                  <div className="absolute w-2 h-2 rounded-full" style={{ background: "#00d9ff", boxShadow: "0 0 8px #00d9ff" }} />
-                  <Upload size={20} className="text-cyan-400 relative z-10" style={{ filter: "drop-shadow(0 0 6px rgba(0,217,255,0.5))" }} />
+              <div className="flex flex-col items-center gap-4 text-center max-w-lg">
+                {/* Animated Radar Visual */}
+                <div className="relative w-20 h-20 rounded-full overflow-hidden flex items-center justify-center border border-purple-500/20 bg-purple-500/5">
+                  <div
+                    className="absolute inset-0 origin-center"
+                    style={{
+                      animation: "radarSweep 3s linear infinite",
+                      background: "conic-gradient(from 0deg, transparent 75%, rgba(139,92,246,0.3) 100%)",
+                    }}
+                  />
+                  <Upload size={24} className="text-purple-400 relative z-10" />
                 </div>
 
-                {isDragActive ? (
-                  <p className="font-mono text-sm font-bold" style={{ color: "var(--accent-cyan)" }}>
-                    RELEASE TO INITIATE SCANNER...
+                <div>
+                  <p className="font-bold text-white text-[16px]">
+                    {isDragActive ? "Release to initiate analysis..." : "Drag and drop telemetry log file"}
                   </p>
-                ) : (
-                  <>
-                    <div className="text-center">
-                      <p className="font-bold text-white text-[15px]">Drop your log file here</p>
-                      <p className="text-[12px] mt-1" style={{ color: "var(--text-muted)" }}>or click to browse · max 10MB</p>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-2 mt-1">
-                      {LOG_FORMATS.map(fmt => (
-                        <span key={fmt.name} className="text-[10px] px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5"
-                          style={{ background: `${fmt.color}10`, border: `1px solid ${fmt.color}25`, color: fmt.color }}>
-                          {fmt.name}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
+                  <p className="text-[12px] mt-1.5 text-[var(--text-muted)] leading-relaxed">
+                    Supports raw access logs, server telemetry, auth records, and CSV datasets up to 10MB. Processing and pattern checks run locally.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                  {LOG_FORMATS.map((fmt) => (
+                    <span
+                      key={fmt.name}
+                      className="text-[10px] font-mono px-2.5 py-1 rounded-md"
+                      style={{ background: `${fmt.color}08`, border: `1px solid ${fmt.color}15`, color: fmt.color }}
+                    >
+                      {fmt.name} ({fmt.tag})
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Selected File */}
+          {/* Selected File Details */}
           <AnimatePresence>
             {file && !analyzing && !result && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                className="mt-4 flex items-center justify-between p-4 rounded-xl border"
-                style={{ borderColor: "rgba(139,92,246,0.25)", background: "rgba(139,92,246,0.05)" }}>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex items-center justify-between p-4 rounded-xl border border-purple-500/20 bg-purple-500/5"
+              >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.25)" }}>
-                    <FileText size={16} className="text-purple-400" />
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-500/10 border border-purple-500/20">
+                    <FileText size={18} className="text-purple-400" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-[13px] font-bold text-white font-mono truncate">{file.name}</p>
-                    <p className="text-[10px] font-mono mt-0.5" style={{ color: "var(--text-muted)" }}>
-                      {(file.size / 1024).toFixed(1)} KB · Ready for analysis
+                    <p className="text-[10px] font-mono mt-0.5 text-[var(--text-muted)]">
+                      {(file.size / 1024).toFixed(1)} KB · Operator node ingest ready
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                  <button onClick={() => setFile(null)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5"
-                    style={{ color: "var(--text-muted)" }}>
-                    <X size={14} />
+                  <button
+                    onClick={() => setFile(null)}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/5 text-[var(--text-muted)]"
+                  >
+                    <X size={15} />
                   </button>
-                  <button onClick={handleAnalyze} className="btn-primary flex items-center gap-2 text-xs py-2 px-4">
-                    <Shield size={12} /> Analyze
+                  <button onClick={handleAnalyze} className="btn-primary flex items-center gap-2 text-xs py-2 px-5">
+                    <Shield size={12} /> Analyze Ingest
                   </button>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Analysis Pipeline */}
+          {/* Analyzing Progress Loader */}
           {analyzing && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="mt-2 p-6 rounded-xl border relative overflow-hidden"
-              style={{ borderColor: "rgba(0,217,255,0.15)", background: "rgba(0,217,255,0.02)" }}>
-              <div className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
-                style={{ background: "rgba(0,217,255,0.05)", border: "1px solid rgba(0,217,255,0.15)" }}>
-                <Loader2 size={16} className="animate-spin text-cyan-400" />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="p-6 rounded-xl border border-purple-500/20 bg-purple-500/5 relative"
+            >
+              <div className="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center bg-purple-500/10 border border-purple-500/20">
+                <Loader2 size={16} className="animate-spin text-purple-400" />
               </div>
-              <h3 className="text-[13px] font-bold font-heading text-white mb-5 flex items-center gap-2">
-                <Activity size={13} className="text-cyan-400 animate-pulse" />
-                Running Analysis Pipeline
+              <h3 className="text-[13px] font-bold font-heading text-white mb-4 flex items-center gap-2">
+                <Activity size={14} className="text-purple-400 animate-pulse" />
+                Ingesting File & Tokenizing Lines
               </h3>
 
               {/* Progress bar */}
-              <div className="mb-5 h-1 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
-                <motion.div className="h-full rounded-full" style={{ background: "linear-gradient(90deg, #00d9ff, #10ffaa)" }}
+              <div className="mb-5 h-1.5 rounded-full overflow-hidden bg-white/5">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400"
                   animate={{ width: `${((activeStep + 1) / scanSteps.length) * 100}%` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }} />
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                />
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {scanSteps.map((step, idx) => {
                   const isCompleted = idx < activeStep;
                   const isActive = idx === activeStep;
                   const Icon = step.icon;
                   return (
-                    <div key={idx} className="flex items-center gap-3.5 transition-all duration-500"
-                      style={{ opacity: isCompleted || isActive ? 1 : 0.3 }}>
-                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all`}
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3.5 transition-all duration-300"
+                      style={{ opacity: isCompleted || isActive ? 1 : 0.3 }}
+                    >
+                      <div
+                        className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
                         style={{
-                          background: isCompleted ? "rgba(16,255,170,0.1)" : isActive ? `${step.color}10` : "rgba(255,255,255,0.03)",
-                          border: `1px solid ${isCompleted ? "rgba(16,255,170,0.25)" : isActive ? `${step.color}30` : "rgba(255,255,255,0.06)"}`,
-                        }}>
-                        {isCompleted
-                          ? <CheckCircle size={13} className="text-emerald-400" />
-                          : isActive
-                          ? <Loader2 size={13} className="animate-spin" style={{ color: step.color }} />
-                          : <Icon size={13} style={{ color: "var(--text-muted)" }} />
-                        }
+                          background: isCompleted ? "rgba(16,255,170,0.08)" : isActive ? `${step.color}08` : "rgba(255,255,255,0.03)",
+                          border: `1px solid ${isCompleted ? "rgba(16,255,170,0.2)" : isActive ? `${step.color}25` : "rgba(255,255,255,0.05)"}`,
+                        }}
+                      >
+                        {isCompleted ? (
+                          <CheckCircle size={13} className="text-emerald-400" />
+                        ) : isActive ? (
+                          <Loader2 size={13} className="animate-spin" style={{ color: step.color }} />
+                        ) : (
+                          <Icon size={13} className="text-[var(--text-muted)]" />
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[12px] font-mono font-bold" style={{
-                          color: isCompleted ? "#10ffaa" : isActive ? step.color : "var(--text-muted)",
-                        }}>{step.label}</p>
-                        <p className="text-[10px] mt-0.5" style={{ color: "var(--text-muted)" }}>{step.desc}</p>
+                      <div className="flex-grow min-w-0">
+                        <p
+                          className="text-[12px] font-mono font-bold"
+                          style={{ color: isCompleted ? "#10ffaa" : isActive ? step.color : "var(--text-muted)" }}
+                        >
+                          {step.label}
+                        </p>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{step.desc}</p>
                       </div>
                       {isCompleted && <span className="text-[9px] font-mono text-emerald-400">DONE</span>}
                       {isActive && <span className="text-[9px] font-mono animate-pulse" style={{ color: step.color }}>RUNNING</span>}
@@ -287,10 +360,9 @@ export default function LogsPage() {
             </motion.div>
           )}
 
-          {/* Error */}
+          {/* Error display */}
           {error && (
-            <div className="mt-4 p-4 rounded-xl flex items-center gap-3 border"
-              style={{ borderColor: "rgba(255,45,85,0.2)", background: "rgba(255,45,85,0.04)" }}>
+            <div className="mt-4 p-4 rounded-xl flex items-center gap-3 border border-red-500/20 bg-red-500/5">
               <AlertTriangle size={15} className="text-red-400 flex-shrink-0" />
               <p className="text-[12px] font-mono text-red-400">{error}</p>
             </div>
@@ -298,11 +370,11 @@ export default function LogsPage() {
         </div>
       </motion.div>
 
-      {/* ── Results ── */}
+      {/* ── Active Scan Results ── */}
       <AnimatePresence>
         {result && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            {/* Stats Grid */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 flex-shrink-0">
+            {/* Stats Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: "Lines Scanned", value: result.stats.totalLines.toLocaleString(), color: "#00d9ff", icon: FileText },
@@ -310,44 +382,41 @@ export default function LogsPage() {
                 { label: "Threats Found", value: result.stats.threatsFound, color: result.stats.threatsFound > 0 ? "#ff2d55" : "#10ffaa", icon: AlertTriangle },
                 { label: "Risk Score", value: `${result.stats.riskScore}/100`, color: getRiskColor(result.stats.riskScore), icon: Shield },
               ].map((stat, i) => (
-                <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                  className="glass-card p-4 text-center" style={{ borderTop: `2px solid ${stat.color}60` }}>
+                <div key={stat.label} className="glass-card p-5 text-center flex flex-col justify-center border-t-2" style={{ borderTopColor: `${stat.color}80` }}>
                   <stat.icon size={16} className="mx-auto mb-2" style={{ color: stat.color }} />
                   <div className="text-2xl font-black font-mono" style={{ color: stat.color }}>{stat.value}</div>
-                  <div className="text-[10px] uppercase font-mono mt-1" style={{ color: "var(--text-muted)" }}>{stat.label}</div>
-                </motion.div>
+                  <div className="text-[10px] uppercase font-mono mt-1 text-[var(--text-muted)]">{stat.label}</div>
+                </div>
               ))}
             </div>
 
-            {/* Threats List */}
+            {/* Findings List */}
             {result.stats.threats.length > 0 ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="glass-card overflow-hidden">
-                <div className="px-5 py-4 flex items-center justify-between border-b" style={{ borderColor: "rgba(255,255,255,0.05)" }}>
+              <div className="glass-card overflow-hidden p-0">
+                <div className="px-5 py-4 flex items-center justify-between border-b border-[#1E2229]">
                   <div className="flex items-center gap-2.5">
                     <AlertTriangle size={14} className="text-red-400" />
                     <h2 className="font-bold font-heading text-white text-[15px]">
-                      Identified Threats <span style={{ color: "var(--text-muted)" }}>({result.stats.threats.length})</span>
+                      Identified Violations <span className="text-[var(--text-muted)] font-normal">({result.stats.threats.length})</span>
                     </h2>
                   </div>
-                  <span className={result.stats.riskScore > 75 ? "badge-critical" : result.stats.riskScore > 45 ? "badge-high" : "badge-medium"}>
+                  <span className={`badge-${result.stats.riskScore > 75 ? "critical" : result.stats.riskScore > 45 ? "high" : "medium"}`}>
                     {getRiskLabel(result.stats.riskScore)}
                   </span>
                 </div>
-                <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.04)" }}>
+                <div className="divide-y divide-[#161A20]">
                   {result.stats.threats.map((threat, i) => {
                     const sColor = threat.severity === "critical" ? "#ff2d55" : threat.severity === "high" ? "#ff6b35" : "#fbbf24";
                     return (
-                      <div key={i} className="px-5 py-4 flex items-center justify-between gap-3 transition-colors hover:bg-white/[0.015]"
-                        style={{ borderLeft: `3px solid ${sColor}35` }}>
+                      <div key={i} className="px-5 py-4 flex items-center justify-between gap-3 transition-colors hover:bg-white/[0.01]" style={{ borderLeft: `3px solid ${sColor}35` }}>
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ background: `${sColor}10`, border: `1px solid ${sColor}25` }}>
+                          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-white/5 border border-white/10">
                             <AlertTriangle size={13} style={{ color: sColor }} />
                           </div>
                           <div className="min-w-0">
                             <p className="text-[13px] font-bold text-white font-heading">{threat.title}</p>
-                            <p className="text-[10px] font-mono mt-0.5" style={{ color: "var(--text-muted)" }}>
-                              {threat.occurrences} occurrences detected
+                            <p className="text-[10px] font-mono mt-0.5 text-[var(--text-muted)]">
+                              {threat.occurrences} occurrences flagged
                             </p>
                           </div>
                         </div>
@@ -356,62 +425,86 @@ export default function LogsPage() {
                     );
                   })}
                 </div>
-              </motion.div>
+              </div>
             ) : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-                className="glass-card p-10 text-center" style={{ borderColor: "rgba(16,255,170,0.12)" }}>
-                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                  style={{ background: "rgba(16,255,170,0.08)", border: "1px solid rgba(16,255,170,0.2)" }}>
+              <div className="glass-card p-10 text-center" style={{ borderColor: "rgba(16,255,170,0.12)" }}>
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 bg-[rgba(16,255,170,0.08)] border border-[rgba(16,255,170,0.2)]">
                   <CheckCircle size={24} className="text-emerald-400" />
                 </div>
-                <p className="font-bold font-heading text-white text-lg">No Threats Detected</p>
-                <p className="text-[12px] mt-2" style={{ color: "var(--text-muted)" }}>
-                  This log file contains zero signature correlation matches. System appears clean.
+                <p className="font-bold font-heading text-white text-lg">Clean Analysis Run</p>
+                <p className="text-[12px] mt-2 text-[var(--text-muted)]">
+                  Heuristic matching engine completed checking records with zero incident alerts triggered.
                 </p>
-              </motion.div>
+              </div>
             )}
 
-            {/* Action Buttons */}
+            {/* Actions */}
             <div className="grid sm:grid-cols-2 gap-3">
               {result.reportId && (
-                <Link href={`/reports/${result.reportId}`}
-                  className="btn-primary flex items-center justify-center gap-2 py-3 text-[13px]">
-                  <BarChart2 size={14} /> View Incident Report <ArrowRight size={13} />
+                <Link href={`/reports/${result.reportId}`} className="btn-primary flex items-center justify-center gap-2 py-3 text-[13px]">
+                  <BarChart2 size={14} /> View SOC Incident Report <ArrowRight size={13} />
                 </Link>
               )}
-              <button onClick={() => { setFile(null); setResult(null); }}
-                className="btn-ghost flex items-center justify-center gap-2 py-3 text-[13px]">
-                <Upload size={14} /> Analyze Another File
+              <button onClick={() => { setFile(null); setResult(null); }} className="btn-ghost flex items-center justify-center gap-2 py-3 text-[13px]">
+                <Upload size={14} /> Reset and Load Another Log
               </button>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── Format Info ── */}
-      {!result && !analyzing && (
-        <motion.div {...fadeUp(0.15)} className="glass-card p-5">
-          <h3 className="text-[10px] font-mono uppercase tracking-widest mb-4" style={{ color: "var(--text-muted)" }}>
-            Supported Ingestion Engines
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {[
-              { name: "Apache Access Log", example: '127.0.0.1 - - [10/Oct] "GET /" 200 2326', color: "#ff6b35" },
-              { name: "Nginx Access Log", example: "Combined Log Format (CLF)", color: "#00d9ff" },
-              { name: "Linux Syslog", example: "Jun 4 12:00:00 hostname sshd[123]: ...", color: "#8b5cf6" },
-              { name: "Auth Log", example: "Failed password for root from 192.168.1.1", color: "#f59e0b" },
-              { name: "CSV Logs", example: "ip,timestamp,method,path,status", color: "#10ffaa" },
-              { name: "Generic Unstructured", example: "Regex-based pattern extraction", color: "#6366f1" },
-            ].map((fmt) => (
-              <div key={fmt.name} className="p-3.5 rounded-xl border transition-colors hover:border-white/10"
-                style={{ borderColor: "rgba(255,255,255,0.05)", background: "rgba(255,255,255,0.02)" }}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: fmt.color }} />
-                  <p className="text-[12px] font-bold text-white font-heading">{fmt.name}</p>
-                </div>
-                <p className="text-[10px] font-mono truncate" style={{ color: "var(--text-muted)" }}>{fmt.example}</p>
+      {/* ── Scan History Table ── */}
+      {!analyzing && !result && (
+        <motion.div {...fadeUp(0.15)} className="glass-card p-0 overflow-hidden flex-shrink-0">
+          <div className="px-5 py-4 border-b flex items-center gap-2.5 border-[#1E2229]">
+            <History size={15} className="text-purple-400" />
+            <h2 className="font-bold font-heading text-white text-[15px]">Recent Log Analyses</h2>
+          </div>
+
+          <div className="overflow-x-auto">
+            {loadingHistory ? (
+              <div className="p-10 text-center space-y-3">
+                <Loader2 size={24} className="animate-spin mx-auto text-purple-500" />
+                <p className="text-xs text-[var(--text-muted)] font-mono">RETRIEVING_INGESTION_LOGS...</p>
               </div>
-            ))}
+            ) : history.length === 0 ? (
+              <div className="p-12 text-center max-w-sm mx-auto space-y-3">
+                <FileText size={32} className="text-[#3D4452] mx-auto" />
+                <h3 className="text-white font-heading font-semibold text-xs">No scan history available</h3>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Uploaded logs and analysis reports will list here once you complete a scan session.
+                </p>
+              </div>
+            ) : (
+              <table className="w-full text-left font-mono text-xs text-[#C8C4BC]">
+                <thead>
+                  <tr className="bg-[#0D1117] border-b border-[#1E2229] h-[36px] text-[#3D4452] uppercase font-bold tracking-wider">
+                    <th className="px-5">Analysis Title / ID</th>
+                    <th className="px-5">Date</th>
+                    <th className="px-5">Risk score</th>
+                    <th className="px-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#1E2229]">
+                  {history.slice(0, 5).map((rep) => (
+                    <tr key={rep.id} className="h-[44px] hover:bg-[#1A1F27] transition-colors">
+                      <td className="px-5 font-bold text-white max-w-[280px] truncate">{rep.title}</td>
+                      <td className="px-5 text-[var(--text-muted)]">{new Date(rep.createdAt).toLocaleDateString()}</td>
+                      <td className="px-5">
+                        <span className="font-bold" style={{ color: getRiskColor(rep.riskScore) }}>
+                          {rep.riskScore}/100
+                        </span>
+                      </td>
+                      <td className="px-5 text-right">
+                        <Link href={`/reports/${rep.id}`} className="btn-ghost h-[28px] px-3.5 inline-flex items-center gap-1.5 rounded-md text-[11px]">
+                          <Eye size={12} /> View Report
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </motion.div>
       )}
