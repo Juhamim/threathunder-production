@@ -1,295 +1,538 @@
-# ThreatHunter AI
+# 🛡️ ThreatHunter AI
 
-**AI-Powered Security Operations Center — Open Source, Free, No Account Required**
+<div align="center">
 
-Live Demo: https://threathunder-production.vercel.app
-GitHub: https://github.com/Juhamim/threathunder-production
+### 🚀 AI-Powered Security Operations Center
 
----
+**Detect • Investigate • Analyze • Respond**
 
-## What is ThreatHunter?
+ThreatHunter AI is a modern, open-source cybersecurity platform that combines advanced threat detection, AI-powered investigation, GitHub secret scanning, and executive incident reporting into a single SOC experience.
 
-ThreatHunter is an open-source cybersecurity platform built for security analysts, developers, 
-and students who need to detect threats, investigate logs, and generate professional incident 
-reports — without paying for expensive commercial SOC tools.
+[🌐 Live Demo](https://threathunder-production.vercel.app) • [🐙 GitHub Repository](https://github.com/Juhamim/threathunder-production)
 
-It combines a real-time threat detection heuristics engine with Google Gemini AI to analyze 
-logs, scan GitHub repositories for leaked secrets, generate executive-grade incident reports, 
-and provide an interactive AI security assistant — all from a single browser interface.
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)
+![Gemini](https://img.shields.io/badge/Google-Gemini-success)
+![Cybersecurity](https://img.shields.io/badge/Category-Cybersecurity-red)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-No data leaves your environment unless you configure external API keys. Everything runs 
-locally or on your own Vercel deployment.
+</div>
 
 ---
 
-## Features
+# 🎯 Why ThreatHunter?
 
-### Log Analysis
-- Upload Nginx, Apache, or Auth log files in plain text format
-- Heuristics engine scans for SQL Injection, Cross-Site Scripting, SSH Brute Force,
-  Directory Traversal, Command Injection, and authentication anomalies
-- Severity classification: Critical, High, Medium, Low
-- Gemini AI generates a full incident analysis with attack explanation, impact assessment,
-  indicators of compromise (IOCs), and remediation steps
-- Export reports as PDF
+Traditional SOC platforms are often expensive, difficult to deploy, and inaccessible to students, startups, researchers, and independent security analysts.
 
-### GitHub Secret Scanner
-- Scan any public or private GitHub repository
-- Detects exposed API keys, tokens, credentials, hardcoded passwords, and
-  security misconfigurations across the entire commit tree and all files
-- Supports private repositories with a GitHub Personal Access Token
-- Findings categorized by severity with file path and line number
+ThreatHunter AI was built to solve this problem by providing:
 
-### Live Threat Dashboard
-- Real-time incident feed showing all detected threats
-- Tactical attack radar map with geographic threat origin visualization
-- Severity breakdown charts (Critical / High / Medium / Low)
-- System health monitor: database status, latency, heuristics engine status
-- Metric cards: total logs scanned, threats flagged, critical alerts, risk score
+✅ AI-Powered Threat Investigation
 
-### AI Security Assistant
-- Streaming chat interface powered by Gemini 2.5 Flash
-- Expert cybersecurity Q&A: attack techniques, vulnerability explanations, 
-  remediation guidance, and security concepts
-- Context-aware responses for both beginners and senior analysts
-- Automatic model fallback: gemini-2.5-flash → gemini-2.0-flash-lite → gemini-1.5-flash-8b
+✅ Real-Time Threat Detection
 
-### Incident Reports
-- View all historical scan reports in the Reports section
-- Full AI-generated incident reports with executive summary, threat overview, 
-  risk assessment, timeline, IOCs, and recommended actions
-- Export to PDF for stakeholder sharing
+✅ GitHub Secret Exposure Scanning
+
+✅ Executive Incident Reporting
+
+✅ Security Operations Dashboard
+
+✅ Self-Hosted Deployment
+
+✅ Open Source Transparency
+
+✅ Zero Vendor Lock-In
+
+Whether you're a cybersecurity student, penetration tester, SOC analyst, developer, or security researcher, ThreatHunter gives you enterprise-grade capabilities without enterprise-grade costs.
 
 ---
 
-## Technology Stack
+# ✨ Core Features
 
-| Layer          | Technology                                      |
-|----------------|-------------------------------------------------|
-| Framework      | Next.js 15 (App Router)                         |
-| Language       | TypeScript                                      |
-| Styling        | Tailwind CSS v4 + Custom CSS Design System      |
-| AI Provider    | Google Gemini API (gemini-2.5-flash)            |
-| Authentication | NextAuth.js (Google OAuth)                      |
-| Database       | Prisma ORM + PostgreSQL (Neon / Supabase)       |
-| Animations     | Framer Motion                                   |
-| Icons          | Lucide React                                    |
-| Notifications  | Sonner (toast system)                           |
-| Deployment     | Vercel                                          |
+## 🧠 AI Log Analysis
 
----
+Upload security logs and receive instant AI-powered threat intelligence.
 
-## Getting Started
+### Supported Log Sources
 
-### Prerequisites
+* Nginx Access Logs
+* Apache Access Logs
+* Authentication Logs
+* Custom Security Logs
+* Application Logs
 
-- Node.js 18 or higher
-- npm or yarn
-- A Google Gemini API key (free at https://aistudio.google.com)
-- A PostgreSQL database (Neon free tier recommended: https://neon.tech)
-- Google OAuth credentials (for authentication)
+### Threat Detection
 
-### 1. Clone the Repository
+* SQL Injection (SQLi)
+* Cross-Site Scripting (XSS)
+* Command Injection
+* Directory Traversal
+* SSH Brute Force
+* Credential Stuffing
+* Authentication Abuse
+* Suspicious User Agents
+* Reconnaissance Activity
+* Rate Limit Violations
 
-    git clone https://github.com/Juhamim/threathunder-production.git
-    cd threathunder-production
+### AI Investigation
 
-### 2. Install Dependencies
+Gemini AI automatically generates:
 
-    npm install
-
-### 3. Configure Environment Variables
-
-Create a file called .env.local in the project root and add the following:
-
-    # Google Gemini AI
-    GEMINI_API_KEY=your_gemini_api_key_here
-
-    # NextAuth Authentication
-    NEXTAUTH_URL=http://localhost:3000
-    NEXTAUTH_SECRET=your_nextauth_secret_here
-
-    # Google OAuth (from Google Cloud Console)
-    GOOGLE_CLIENT_ID=your_google_client_id
-    GOOGLE_CLIENT_SECRET=your_google_client_secret
-
-    # PostgreSQL Database (Neon, Supabase, or any Postgres provider)
-    DATABASE_URL=postgresql://user:password@host/database?sslmode=require
-
-To generate NEXTAUTH_SECRET, run:
-
-    openssl rand -base64 32
-
-### 4. Set Up the Database
-
-    npx prisma generate
-    npx prisma db push
-
-### 5. Run the Development Server
-
-    npm run dev
-
-Open http://localhost:3000 in your browser.
-
-### 6. Build for Production
-
-    npm run build
-    npm start
+* Executive Summary
+* Threat Explanation
+* Risk Assessment
+* Indicators of Compromise (IOCs)
+* Attack Timeline
+* Mitigation Recommendations
+* Remediation Guidance
 
 ---
 
-## Deployment on Vercel
+## 🔑 GitHub Secret Scanner
 
-1. Push your repository to GitHub
-2. Go to https://vercel.com and import the repository
-3. Add the same environment variables from your .env.local in the Vercel project settings
-4. Deploy
+ThreatHunter scans repositories for exposed secrets and security risks.
 
-The application will be live on your Vercel URL automatically.
+### Detection Capabilities
 
-For Google OAuth to work in production:
-- Go to Google Cloud Console → Credentials
-- Add your Vercel production URL to "Authorized redirect URIs":
-  https://your-app.vercel.app/api/auth/callback/google
+* API Keys
+* AWS Credentials
+* Google Cloud Credentials
+* JWT Secrets
+* GitHub Tokens
+* Database Passwords
+* OAuth Secrets
+* Hardcoded Credentials
+* Environment Variables
+* Sensitive Configuration Files
 
----
+### Features
 
-## API Routes
-
-| Route                     | Method | Description                              |
-|---------------------------|--------|------------------------------------------|
-| /api/upload               | POST   | Upload and analyze a log file            |
-| /api/analyze              | POST   | Run heuristics on uploaded log data      |
-| /api/threats              | GET    | Retrieve stored threat records           |
-| /api/threats/[id]         | GET    | Get a single threat by ID                |
-| /api/dashboard/stats      | GET    | Fetch dashboard metrics and recent data  |
-| /api/scan/github          | POST   | Scan a GitHub repository for secrets     |
-| /api/reports              | GET    | List all generated incident reports      |
-| /api/reports/[id]         | GET    | Get a specific report                    |
-| /api/reports/[id]/pdf     | GET    | Export a report as PDF                   |
-| /api/reports/export       | POST   | Batch export reports                     |
-| /api/ai/chat              | POST   | Stream AI assistant responses            |
-| /api/auth/[...nextauth]   | ANY    | NextAuth authentication handlers         |
+* Public Repository Scanning
+* Private Repository Support
+* Severity Classification
+* File Path Identification
+* Line Number Detection
+* Multi-File Analysis
 
 ---
 
-## Project Structure
+## 📊 Live Threat Dashboard
 
-    threathunder-production/
-    ├── src/
-    │   ├── app/
-    │   │   ├── (auth)/                  # Sign-in page
-    │   │   ├── (dashboard)/             # Protected app pages
-    │   │   │   ├── layout.tsx           # Sidebar + topbar shell
-    │   │   │   ├── dashboard/           # Main dashboard page
-    │   │   │   ├── logs/                # Log upload and analysis
-    │   │   │   ├── threats/             # Threat list and investigation
-    │   │   │   ├── reports/             # Incident reports viewer
-    │   │   │   ├── scanner/             # GitHub secret scanner
-    │   │   │   └── chat/                # AI assistant chat
-    │   │   ├── api/                     # Backend API routes
-    │   │   ├── globals.css              # Global design system
-    │   │   ├── layout.tsx               # Root HTML layout
-    │   │   └── page.tsx                 # Public landing page
-    │   ├── lib/
-    │   │   ├── ai/
-    │   │   │   └── gemini.ts            # Gemini AI integration
-    │   │   ├── scanners/
-    │   │   │   └── secrets.ts           # Secret detection engine
-    │   │   └── threat-detection.ts      # Heuristics engine
-    │   └── components/
-    │       └── common/
-    │           └── LivingBackground.tsx # Animated canvas background
-    ├── prisma/
-    │   └── schema.prisma                # Database schema
-    ├── .env.local                       # Local environment variables
-    ├── package.json
-    └── README.md
+Monitor your security posture in real time.
+
+### Dashboard Components
+
+* Live Incident Feed
+* Threat Radar
+* Risk Score Engine
+* Severity Distribution Charts
+* Incident Timeline
+* Recent Threat Activity
+* System Health Metrics
+* Database Status Monitoring
 
 ---
 
-## Threat Detection Rules
+## 🤖 AI Security Assistant
 
-The heuristics engine currently detects the following threat types:
+Integrated cybersecurity copilot powered by Google Gemini.
 
-- SQL Injection (SQLi) — Union selects, comment-based payloads, error-based probes
-- Cross-Site Scripting (XSS) — Script tags, event handlers, JavaScript URIs
-- SSH Brute Force — Repeated authentication failures from a single IP
-- Directory Traversal — Path traversal sequences (../, %2e%2e)
-- Command Injection — Shell metacharacters and OS command patterns
-- Credential Stuffing — High-volume login attempts across multiple accounts
-- Suspicious User Agents — Known attack tool signatures (sqlmap, nikto, etc.)
-- Rate Limit Violations — Abnormal request frequency from a single source
+### Capabilities
 
----
-
-## Environment Variables Reference
-
-| Variable              | Required | Description                                    |
-|-----------------------|----------|------------------------------------------------|
-| GEMINI_API_KEY        | Yes      | Google Gemini API key for AI features          |
-| NEXTAUTH_URL          | Yes      | Full URL of your app (localhost or production) |
-| NEXTAUTH_SECRET       | Yes      | Random secret for session encryption           |
-| GOOGLE_CLIENT_ID      | Yes      | Google OAuth client ID                         |
-| GOOGLE_CLIENT_SECRET  | Yes      | Google OAuth client secret                     |
-| DATABASE_URL          | Yes      | PostgreSQL connection string                   |
-| GITHUB_TOKEN          | No       | GitHub token for scanning private repositories |
+* Security Q&A
+* Attack Explanations
+* Vulnerability Research
+* Incident Response Guidance
+* Threat Hunting Assistance
+* Security Best Practices
+* Blue Team Support
+* SOC Investigation Help
 
 ---
 
-## Contributing
+## 📑 Incident Reporting Engine
 
-Contributions are welcome and appreciated.
+Generate professional security reports instantly.
 
-1. Fork the repository
-2. Create a new branch:
-       git checkout -b feature/your-feature-name
-3. Make your changes and commit:
-       git commit -m "feat: add your feature description"
-4. Push to your fork:
-       git push origin feature/your-feature-name
-5. Open a Pull Request on GitHub
+### Report Sections
 
-Please follow the existing code style and add comments for complex logic.
-For major changes, open an issue first to discuss the approach.
+* Executive Summary
+* Threat Overview
+* Risk Assessment
+* Timeline Analysis
+* Indicators of Compromise
+* Root Cause Analysis
+* Remediation Actions
+* Recommended Security Controls
 
----
+### Export Options
 
-## License
-
-This project is licensed under the MIT License.
-
-You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-copies of this software, with or without modification, subject to the following condition:
-
-The above copyright notice and this permission notice shall be included in all copies 
-or substantial portions of the software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
-
-Full license text: https://opensource.org/licenses/MIT
+* PDF Reports
+* Historical Reports
+* Executive Briefings
 
 ---
 
-## Author
+# 🏗️ System Architecture
 
-**Juhaim Mohammed**
+## High-Level Architecture
 
-- GitHub: https://github.com/Juhamim
-- Email: juhaimmtm@gmail.com
-- Project Repository: https://github.com/Juhamim/threathunder-production
-- Live Application: https://threathunder-production.vercel.app
+```text
+┌──────────────────────────┐
+│      User Uploads        │
+│  Logs / GitHub Repos     │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│    Ingestion Layer       │
+│ Log Parser & Validator   │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│ Threat Detection Engine  │
+│ Pattern Matching Rules   │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│  Severity Classification │
+│ Critical / High / Medium │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│   Gemini AI Analysis     │
+│ Threat Investigation     │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│ Incident Report Builder  │
+└─────────────┬────────────┘
+              │
+              ▼
+┌──────────────────────────┐
+│ Dashboard & PDF Export   │
+└──────────────────────────┘
+```
 
 ---
 
-## Acknowledgements
+# ⚡ End-to-End Security Workflow
 
-- Google Gemini AI for powering threat analysis and the AI assistant
-- Vercel for hosting and deployment infrastructure
-- Next.js team for the application framework
-- Prisma for database tooling
-- The open-source security community for inspiration and research
+```text
+User Uploads Logs
+        │
+        ▼
+Log Ingestion
+        │
+        ▼
+Threat Detection Engine
+(SQLi / XSS / Brute Force)
+        │
+        ▼
+Risk Scoring
+        │
+        ▼
+Gemini AI Investigation
+        │
+        ▼
+IOC Extraction
+        │
+        ▼
+Executive Report Generation
+        │
+        ▼
+Dashboard Visualization
+        │
+        ▼
+PDF Export
+```
 
 ---
 
-*ThreatHunter AI — Built in the open. Inspect the code. Own your security.*
+# 🧠 AI Investigation Workflow
+
+```text
+Raw Security Logs
+        │
+        ▼
+Threat Classification
+        │
+        ▼
+Severity Assessment
+        │
+        ▼
+Context Extraction
+        │
+        ▼
+Gemini AI Analysis
+        │
+        ▼
+Attack Explanation
+        │
+        ▼
+Risk Evaluation
+        │
+        ▼
+Remediation Plan
+```
+
+---
+
+# 🔥 Threat Detection Pipeline
+
+ThreatHunter currently detects:
+
+🔴 SQL Injection
+
+🔴 Cross-Site Scripting
+
+🔴 Command Injection
+
+🔴 Directory Traversal
+
+🔴 SSH Brute Force
+
+🔴 Credential Stuffing
+
+🔴 Secret Exposure
+
+🔴 Suspicious User Agents
+
+🔴 Authentication Abuse
+
+🔴 Reconnaissance Attempts
+
+🔴 Rate Limit Violations
+
+🔴 Configuration Leaks
+
+---
+
+# 🛠️ Technology Stack
+
+| Layer          | Technology              |
+| -------------- | ----------------------- |
+| Frontend       | Next.js 15              |
+| Language       | TypeScript              |
+| Styling        | Tailwind CSS v4         |
+| AI Engine      | Google Gemini 2.5 Flash |
+| Authentication | NextAuth.js             |
+| Database       | PostgreSQL              |
+| ORM            | Prisma                  |
+| Animations     | Framer Motion           |
+| Icons          | Lucide React            |
+| Notifications  | Sonner                  |
+| Deployment     | Vercel                  |
+
+---
+
+# 📂 Project Structure
+
+```bash
+threathunter-ai/
+│
+├── src/
+│   ├── app/
+│   │   ├── dashboard/
+│   │   ├── logs/
+│   │   ├── reports/
+│   │   ├── scanner/
+│   │   ├── chat/
+│   │   └── api/
+│   │
+│   ├── components/
+│   ├── lib/
+│   │   ├── ai/
+│   │   ├── scanners/
+│   │   └── threat-detection/
+│   │
+│   └── styles/
+│
+├── prisma/
+├── public/
+├── package.json
+└── README.md
+```
+
+---
+
+# 🚀 Quick Start
+
+## Clone Repository
+
+```bash
+git clone https://github.com/Juhamim/threathunder-production.git
+cd threathunder-production
+```
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+## Configure Environment Variables
+
+```env
+GEMINI_API_KEY=
+
+NEXTAUTH_URL=
+
+NEXTAUTH_SECRET=
+
+GOOGLE_CLIENT_ID=
+
+GOOGLE_CLIENT_SECRET=
+
+DATABASE_URL=
+
+GITHUB_TOKEN=
+```
+
+## Run Development Server
+
+```bash
+npm run dev
+```
+
+Open:
+
+```bash
+http://localhost:3000
+```
+
+---
+
+# 🌍 Production Deployment
+
+### Deploy on Vercel
+
+```bash
+npm run build
+```
+
+Import the repository into Vercel and add all environment variables.
+
+ThreatHunter is fully optimized for:
+
+* Vercel
+* PostgreSQL
+* Neon Database
+* Supabase
+* Cloudflare R2
+* Google Gemini API
+
+---
+
+# 📸 Screenshots
+
+```md
+Landing Page Screenshot
+
+Dashboard Screenshot
+
+Log Analysis Screenshot
+
+GitHub Scanner Screenshot
+
+Incident Reports Screenshot
+```
+
+---
+
+# 🎯 Use Cases
+
+### Security Operations Center
+
+Monitor and investigate threats in real time.
+
+### Penetration Testing
+
+Analyze attack traces and identify security weaknesses.
+
+### Security Research
+
+Explore attack patterns and incident trends.
+
+### Cybersecurity Education
+
+Learn SOC workflows and threat analysis.
+
+### Startup Security
+
+Monitor applications without purchasing expensive SIEM platforms.
+
+---
+
+# 🗺️ Future Roadmap
+
+## Version 2.0
+
+* [ ] AI SOC Agent
+* [ ] Autonomous Incident Response
+* [ ] Malware Detection
+* [ ] YARA Rules Engine
+* [ ] Sigma Rules Integration
+* [ ] Threat Intelligence Feeds
+* [ ] SIEM Connectors
+* [ ] Splunk Integration
+* [ ] ELK Stack Integration
+* [ ] Multi-Tenant Organizations
+* [ ] Team Collaboration
+* [ ] Alert Notifications
+
+---
+
+# 🤝 Contributing
+
+Contributions are welcome.
+
+```bash
+git checkout -b feature/amazing-feature
+git commit -m "feat: add amazing feature"
+git push origin feature/amazing-feature
+```
+
+Open a Pull Request and help improve ThreatHunter.
+
+---
+
+# 📜 License
+
+MIT License
+
+This project is open-source and free to use, modify, distribute, and self-host.
+
+---
+
+# 👨‍💻 Author
+
+### Juhaim Mohammed
+
+Cybersecurity Engineer • Full Stack Developer • AI Builder
+
+GitHub:
+https://github.com/Juhamim
+
+Project Repository:
+https://github.com/Juhamim/threathunder-production
+
+Live Application:
+https://threathunder-production.vercel.app
+
+---
+
+<div align="center">
+
+## 🛡️ ThreatHunter AI
+
+### Detect Threats. Investigate Faster. Secure Smarter.
+
+Built with ❤️ for the cybersecurity community.
+
+⭐ Star the repository if you find it useful.
+
+</div>
